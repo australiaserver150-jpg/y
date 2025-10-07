@@ -1,7 +1,6 @@
 'use client';
 
 import { useUser } from '@/firebase';
-import { UserDashboard } from '@/components/user-dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import GoogleLoginButton from '@/components/google-login-button';
 import EmailAuthForm from '@/components/EmailAuthForm';
