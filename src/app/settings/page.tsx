@@ -46,7 +46,7 @@ function SettingsPageContent() {
           </div>
           <div className="flex-grow" />
           <Button variant="ghost" size="icon" className="text-green-500">
-            <Plus />
+            <QrCode />
           </Button>
         </div>
 
