@@ -13,11 +13,6 @@
           "type": "string",
           "description": "The user's unique, fixed username."
         },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's email address."
-        },
         "profilePicture": {
           "type": "string",
           "format": "uri",
@@ -30,8 +25,7 @@
       },
       "required": [
         "name",
-        "username",
-        "email"
+        "username"
       ]
     },
     "ChatMessage": {
@@ -52,14 +46,6 @@
           "format": "uri",
           "description": "URL of an image sent in the message."
         },
-        "type": {
-          "type": "string",
-          "enum": [
-            "text",
-            "image"
-          ],
-          "description": "The type of the message."
-        },
         "timestamp": {
           "type": "string",
           "format": "date-time",
@@ -68,8 +54,7 @@
       },
       "required": [
         "senderId",
-        "timestamp",
-        "type"
+        "timestamp"
       ]
     },
     "Chat": {
