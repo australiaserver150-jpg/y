@@ -1,31 +1,53 @@
 {
   "entities": {
-    "UserProfile": {
+    "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "UserProfile",
+      "title": "User",
       "type": "object",
-      "description": "Represents a user profile in the ConnectNow application.",
+      "description": "Represents a user of the ConnectNow application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
+          "description": "Unique identifier for the User entity."
         },
         "username": {
           "type": "string",
-          "description": "The user's chosen username."
+          "description": "The user's username."
         },
         "email": {
           "type": "string",
           "description": "The user's email address.",
           "format": "email"
         },
+        "profileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: User 1:1 UserProfile)"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "profileId"
+      ]
+    },
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
         "displayName": {
           "type": "string",
           "description": "The user's display name."
         },
-        "profilePictureUrl": {
+        "avatarUrl": {
           "type": "string",
-          "description": "URL of the user's profile picture.",
+          "description": "URL of the user's avatar image.",
           "format": "uri"
         },
         "bio": {
@@ -35,52 +57,14 @@
       },
       "required": [
         "id",
-        "username",
-        "email",
         "displayName"
-      ]
-    },
-    "ChatMessage": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ChatMessage",
-      "type": "object",
-      "description": "Represents a chat message sent between users.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ChatMessage entity."
-        },
-        "senderId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N ChatMessage - Sender)"
-        },
-        "recipientId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N ChatMessage - Recipient)"
-        },
-        "content": {
-          "type": "string",
-          "description": "The content of the chat message."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "The timestamp of when the message was sent.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "senderId",
-        "recipientId",
-        "content",
-        "timestamp"
       ]
     },
     "Project": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Project",
       "type": "object",
-      "description": "Represents a project within the ConnectNow application.",
+      "description": "Represents a project within ConnectNow.",
       "properties": {
         "id": {
           "type": "string",
@@ -90,19 +74,55 @@
           "type": "string",
           "description": "The name of the project."
         },
-        "ownerId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Project)"
-        },
         "googleAnalyticsEnabled": {
           "type": "boolean",
           "description": "Indicates whether Google Analytics is enabled for this project."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Project)"
         }
       },
       "required": [
         "id",
         "name",
-        "ownerId"
+        "userId"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a message in the real-time chat.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message entity."
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to User who sent the message. (Relationship: User 1:N Message)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the message was sent.",
+          "format": "date-time"
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Message)"
+        }
+      },
+      "required": [
+        "id",
+        "senderId",
+        "content",
+        "timestamp",
+        "projectId"
       ]
     }
   },
@@ -115,53 +135,33 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/profile",
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user account information. Uses path-based ownership for private user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/user_profiles/{profileId}",
         "definition": {
           "entityName": "UserProfile",
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profile data. Path-based ownership ensures only the user can access their profile.",
+          "description": "Stores user profile information. profileId corresponds to the id of the user's profile.",
           "params": [
             {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/messages/{messageId}",
-        "definition": {
-          "entityName": "ChatMessage",
-          "schema": {
-            "$ref": "#/backend/entities/ChatMessage"
-          },
-          "description": "Stores chat messages for a specific user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "messageId",
-              "description": "The unique identifier of the message."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/projects/{projectId}",
-        "definition": {
-          "entityName": "Project",
-          "schema": {
-            "$ref": "#/backend/entities/Project"
-          },
-          "description": "Stores project data. Includes the 'ownerId' field for authorization independence.",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "The unique identifier of the project."
+              "name": "profileId",
+              "description": "The unique identifier of the user profile."
             }
           ]
         }
@@ -173,11 +173,11 @@
           "schema": {
             "$ref": "#/backend/entities/Project"
           },
-          "description": "Stores references to projects owned by a specific user. Enables efficient listing of user-owned projects. Project ID is duplicated here for optimized retrieval. ",
+          "description": "Stores project information. Each project is owned by a user, as indicated by the userId and stored in the project document.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user."
+              "description": "The unique identifier of the user who owns the project."
             },
             {
               "name": "projectId",
@@ -185,8 +185,32 @@
             }
           ]
         }
+      },
+      {
+        "path": "/users/{userId}/projects/{projectId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores messages associated with a project.  Includes denormalized 'projectId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the project."
+            },
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project to which the message belongs."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier of the message."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to address the 'auth/operation-not-allowed' error, which typically indicates an issue with Firebase Authentication configuration or security rules. Given the provided application entities (UserProfile, ChatMessage, Project) and the principle of Authorization Independence, the structure prioritizes denormalization to avoid complex `get()` calls in security rules. Path-based ownership is used where applicable, and membership maps are utilized for collaborative data. This approach ensures that security rules are clear, maintainable, and efficient.\n\nThe structure includes the following collections:\n\n*   `/users/{userId}/profile`: Stores user profile data. This uses path-based ownership for simplicity and security. No denormalization is needed here as only the user can access their own profile data.\n*   `/users/{userId}/messages/{messageId}`: Stores chat messages. This uses path-based ownership. No denormalization is needed here as only the user can access their own messages.\n*   `/projects/{projectId}`: Stores project data. The `ownerId` is stored within the project document for easy access and to enable listing projects owned by a user.\n*   `/users/{userId}/projects/{projectId}`: This collection is maintained for listing and managing projects owned by a specific user. It contains a reference to the project in `/projects/{projectId}`. Duplicating project ID here is useful for quickly listing projects of a user.\n\nThis design ensures Authorization Independence by avoiding `get()` calls in security rules. For example, project ownership is explicitly stored in the `/projects/{projectId}` document, eliminating the need to fetch user data to determine ownership. The segregation of data into user-specific collections (e.g., `/users/{userId}/profile`) further simplifies security rules.\n\nTo support secure `list` operations (QAPs), the structure leverages path-based ownership and the explicit storage of ownership information. For example, listing projects owned by a user can be done securely by querying the `/users/{userId}/projects/{projectId}` collection. Rules will validate that `request.auth.uid == userId`.\n"
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability, following the specified design principles. It leverages path-based ownership for user-specific data and denormalization to avoid hierarchical authorization dependencies. \n\n*   **Users and UserProfiles:** User data and profiles are separated into distinct collections. Each user has a dedicated document in `/users/{userId}` and a corresponding profile in `/user_profiles/{profileId}`. The `User` document contains the `profileId` to establish the 1:1 relationship. This approach uses Structural Segregation, avoiding mixing data with different access requirements in the same collection.\n*   **Projects:** Each user can own multiple projects, structured using path-based ownership under `/users/{userId}/projects/{projectId}`. The `Project` entity includes a `userId` to reference the owning user, reinforcing ownership. This also avoids the need to query across collections to get project data.  Google Analytics setting resides within the `Project` document itself, adhering to predictability within the schema.\n*   **Messages:**  Messages are nested under the projects they belong to at `/users/{userId}/projects/{projectId}/messages/{messageId}`. Each message contains the `senderId` and `projectId` so that rules can validate that the sender is the owner of the parent project.  This structure supports the real-time chat feature while maintaining clear ownership and authorization. This structure enables secure `list` operations within a project.\n\nThis design enables Authorization Independence because all authorization is based on the current user's `uid` and the explicit `userId` stored within the documents. There are no `get()` calls needed to determine access, as the necessary context is either derived from the path or included in the document itself. The hierarchical structure, combined with denormalization, supports QAPs by enabling secure list operations at each level.  For example, listing messages within a project only requires checking the user's ownership of the parent project, not individual message permissions."
   }
 }
