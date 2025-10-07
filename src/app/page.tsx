@@ -1,21 +1,23 @@
-
 "use client";
 
 import { useFirebase } from "../firebase/provider";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
 export default function LoginPage() {
   const { auth, db } = useFirebase();
@@ -23,6 +25,13 @@ export default function LoginPage() {
   const { toast } = useToast();
   
   const [user, loading] = useAuthState(auth);
+  const [hostname, setHostname] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setHostname(window.location.hostname);
+    }
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -65,13 +74,13 @@ export default function LoginPage() {
     }
   };
 
-  if (loading || !auth || user) {
+  if (loading || user) {
     return <Loading />;
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-[400px]">
+      <Card className="w-[450px]">
         <CardHeader className="text-center">
           <CardTitle>Welcome to ConnectNow</CardTitle>
           <CardDescription>
@@ -87,6 +96,21 @@ export default function LoginPage() {
             Sign in with Google
           </button>
         </CardContent>
+        {hostname && (
+          <CardFooter>
+            <Alert>
+              <Terminal className="h-4 w-4" />
+              <AlertTitle>Action Required!</AlertTitle>
+              <AlertDescription>
+                To fix the sign-in error, add the following domain to your Firebase project's authorized domains list:
+                <div className="font-mono bg-muted p-2 rounded-md my-2 text-sm">
+                  {hostname}
+                </div>
+                You also need to add 'localhost'.
+              </AlertDescription>
+            </Alert>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );
