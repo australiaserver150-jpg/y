@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/icons";
 
-export default function ConnectNowPage() {
+function ChatLayout() {
   const [conversations, setConversations] =
     React.useState<Conversation[]>(initialConversations);
   const [activeConversationId, setActiveConversationId] = React.useState<
@@ -79,54 +79,61 @@ export default function ConnectNowPage() {
   const { isMobile } = useSidebar();
 
   return (
+    <div className="h-screen flex flex-col">
+      <Sidebar className="border-r" side="left" collapsible="icon">
+        <SidebarHeader>
+          <div className="flex items-center gap-2 p-2">
+            <Logo className="size-8 text-primary" />
+            <h1 className="font-headline text-2xl font-bold text-primary-foreground group-data-[collapsible=icon]:hidden">
+              ConnectNow
+            </h1>
+          </div>
+        </SidebarHeader>
+
+        <SidebarContent className="p-0">
+          <div className="p-2 space-y-4">
+            <UserProfile user={currentUser} />
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search..." className="pl-8" />
+            </div>
+          </div>
+          <ContactList
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            onContactSelect={setActiveConversationId}
+          />
+        </SidebarContent>
+      </Sidebar>
+
+      <SidebarInset className="flex flex-col">
+        {activeConversation ? (
+          <ChatWindow
+            key={activeConversation.id}
+            conversation={activeConversation}
+            currentUser={currentUser}
+            onSendMessage={handleSendMessage}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+            <div className="text-center">
+              {!isMobile && <SidebarTrigger className="absolute top-4 left-4" />}
+              <p className="text-muted-foreground">
+                Select a conversation to start chatting
+              </p>
+            </div>
+          </div>
+        )}
+      </SidebarInset>
+    </div>
+  );
+}
+
+
+export default function ConnectNowPage() {
+  return (
     <SidebarProvider defaultOpen>
-      <div className="h-screen flex flex-col">
-        <Sidebar className="border-r" side="left" collapsible="icon">
-          <SidebarHeader>
-            <div className="flex items-center gap-2 p-2">
-              <Logo className="size-8 text-primary" />
-              <h1 className="font-headline text-2xl font-bold text-primary-foreground group-data-[collapsible=icon]:hidden">
-                ConnectNow
-              </h1>
-            </div>
-          </SidebarHeader>
-
-          <SidebarContent className="p-0">
-            <div className="p-2 space-y-4">
-              <UserProfile user={currentUser} />
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search..." className="pl-8" />
-              </div>
-            </div>
-            <ContactList
-              conversations={conversations}
-              activeConversationId={activeConversationId}
-              onContactSelect={setActiveConversationId}
-            />
-          </SidebarContent>
-        </Sidebar>
-
-        <SidebarInset className="flex flex-col">
-          {activeConversation ? (
-            <ChatWindow
-              key={activeConversation.id}
-              conversation={activeConversation}
-              currentUser={currentUser}
-              onSendMessage={handleSendMessage}
-            />
-          ) : (
-            <div className="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-              <div className="text-center">
-                {!isMobile && <SidebarTrigger className="absolute top-4 left-4" />}
-                <p className="text-muted-foreground">
-                  Select a conversation to start chatting
-                </p>
-              </div>
-            </div>
-          )}
-        </SidebarInset>
-      </div>
+      <ChatLayout />
     </SidebarProvider>
   );
 }

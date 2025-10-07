@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Paperclip, SendHoriz, Smile } from "lucide-react";
+import { Paperclip, SendHorizontal, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SmartReply } from "./smart-reply";
@@ -63,7 +63,7 @@ export function ChatInput({ onSendMessage, lastMessage }: ChatInputProps) {
             <Paperclip className="size-5" />
           </Button>
           <Button onClick={handleSend} size="icon" disabled={!message.trim()}>
-            <SendHoriz className="size-5" />
+            <SendHorizontal className="size-5" />
           </Button>
         </div>
       </div>
