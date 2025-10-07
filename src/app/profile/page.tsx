@@ -34,6 +34,11 @@ function ProfilePageContent() {
     if (user) {
       const fetchUserData = async () => {
         try {
+          if (!db) {
+            console.error("Firestore is not initialized");
+            setInitialLoading(false);
+            return;
+          }
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
@@ -57,6 +62,14 @@ function ProfilePageContent() {
     if (!user || !e.target.files || e.target.files.length === 0) return;
 
     const file = e.target.files[0];
+    if (!storage) {
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: "Firebase Storage is not configured.",
+      });
+      return;
+    }
     const storageRef = ref(storage, `profile-pictures/${user.uid}`);
     
     setUploading(true);
@@ -69,8 +82,10 @@ function ProfilePageContent() {
         await updateProfile(auth.currentUser, { photoURL: newPhotoURL });
       }
       
-      const userDocRef = doc(db, "users", user.uid);
-      await setDoc(userDocRef, { avatar: newPhotoURL }, { merge: true });
+      if (db) {
+        const userDocRef = doc(db, "users", user.uid);
+        await setDoc(userDocRef, { avatar: newPhotoURL }, { merge: true });
+      }
 
       setPhotoURL(newPhotoURL);
       toast({ title: "Profile picture updated!" });
@@ -94,8 +109,10 @@ function ProfilePageContent() {
         await updateProfile(auth.currentUser, { displayName: displayName });
       }
 
-      const userDocRef = doc(db, "users", user.uid);
-      await setDoc(userDocRef, { name: displayName }, { merge: true });
+      if (db) {
+        const userDocRef = doc(db, "users", user.uid);
+        await setDoc(userDocRef, { name: displayName }, { merge: true });
+      }
 
       toast({ title: "Profile updated successfully!" });
       router.push('/chat');

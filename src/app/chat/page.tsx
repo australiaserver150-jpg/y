@@ -48,6 +48,10 @@ function ChatLayout() {
     }
     if (user) {
       const fetchUserData = async () => {
+        if (!db) {
+          console.error("Firestore is not initialized");
+          return;
+        }
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           setLocalUser({ id: user.uid, ...userDoc.data() } as User);
