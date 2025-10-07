@@ -294,8 +294,14 @@ export function RequestList() {
 
         try {
             if (action === 'accept') {
-                await updateDoc(currentUserRef, { friends: arrayUnion(targetUid), friendRequests: arrayRemove(targetUid) });
-                await updateDoc(targetUserRef, { friends: arrayUnion(user.uid), sentRequests: arrayRemove(user.uid) });
+                await updateDoc(currentUserRef, { 
+                    friends: arrayUnion(targetUid), 
+                    friendRequests: arrayRemove(targetUid) 
+                });
+                await updateDoc(targetUserRef, { 
+                    friends: arrayUnion(user.uid), 
+                    sentRequests: arrayRemove(user.uid) 
+                });
                 toast({ title: 'Friend request accepted!' });
             } else {
                 await updateDoc(currentUserRef, { friendRequests: arrayRemove(targetUid) });
