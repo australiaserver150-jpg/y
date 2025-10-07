@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase/provider";
+import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, where, Timestamp } from "firebase/firestore";
 import { Bell, Camera, MessageSquare, Plus, Search, Users, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
