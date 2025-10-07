@@ -53,7 +53,6 @@ export default function GoogleLoginButton() {
         username: user.email?.split('@')[0] || '',
         email: user.email,
         profilePicture: user.photoURL,
-        friends: []
       }, { merge: true });
 
       toast({

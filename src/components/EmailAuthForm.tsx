@@ -36,7 +36,6 @@ export function EmailAuthForm() {
         username: username,
         email: userCredential.user.email,
         profilePicture: userCredential.user.photoURL,
-        friends: []
       }, { merge: true });
       toast({ title: 'Success!', description: 'Your account has been created.' });
     } catch (error: any) {

@@ -22,13 +22,6 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
-        },
-        "friends": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "A list of user IDs that are friends with this user."
         }
       },
       "required": ["name", "username", "email"]
