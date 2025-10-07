@@ -1,196 +1,126 @@
+
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, Timestamp } from "firebase/firestore";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { Loading } from "@/components/Loading";
+import { Bell, Camera, MessageSquare, Plus, Search, Users, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useFirebase } from "@/firebase/provider";
-import { suggestReplies, SmartReplyInput } from "@/ai/flows/smart-reply-suggestions";
+import { Badge } from "@/components/ui/badge";
 
-// Type for a message from Firestore
-interface FirestoreMessage {
-  id: string;
-  text: string;
-  uid: string;
-  displayName: string;
-  photoURL: string;
-  createdAt: Timestamp | null;
-}
+const chats = [
+  {
+    id: 1,
+    name: "Design Team",
+    avatar: "https://picsum.photos/seed/1/40/40",
+    lastMessage: "Yeah, that's a great idea!",
+    time: "3:43 PM",
+    unread: 3,
+    online: true,
+  },
+  {
+    id: 2,
+    name: "John Doe",
+    avatar: "https://picsum.photos/seed/2/40/40",
+    lastMessage: "See you tomorrow.",
+    time: "1:21 PM",
+    unread: 0,
+    online: false,
+    status: 'read'
+  },
+  {
+    id: 3,
+    name: "Mom",
+    avatar: "https://picsum.photos/seed/3/40/40",
+    lastMessage: "Call me when you're free.",
+    time: "11:57 AM",
+    unread: 1,
+    online: true,
+  },
+  {
+    id: 4,
+    name: "Project Group",
+    avatar: "https://picsum.photos/seed/4/40/40",
+    lastMessage: "Let's meet at 5.",
+    time: "Yesterday",
+    unread: 0,
+    online: false,
+    status: 'delivered'
+  },
+];
 
-function ChatPageContent() {
-  const { auth, firestore: db } = useFirebase();
-  const [user, loading] = useAuthState(auth!);
-  const [messages, setMessages] = useState<FirestoreMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // Google Sign-In
-  const handleSignIn = async () => {
-    if (!auth) return;
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-  };
-  
-  // Send message function
-  const sendMessage = async (messageText: string) => {
-    if (!messageText.trim() || !user || !db) return;
-    await addDoc(collection(db, "messages"), {
-      text: messageText,
-      uid: user.uid,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      createdAt: serverTimestamp(),
-    });
-  };
-
-  // Form submission handler
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await sendMessage(input);
-    setInput("");
-    setSuggestions([]); // Clear suggestions after sending a message
-  };
-
-  // Handle clicking a suggestion
-  const handleSuggestionClick = async (suggestion: string) => {
-    await sendMessage(suggestion);
-    setSuggestions([]);
-  };
-
-  // Debounced function to get smart replies
-  const getSmartReplies = useCallback(async (currentMessages: FirestoreMessage[]) => {
-    if (!user || isGenerating || currentMessages.length === 0) return;
-
-    // Only generate replies if the last message is not from the current user
-    const lastMessage = currentMessages[currentMessages.length - 1];
-    if (lastMessage.uid === user.uid) {
-        setSuggestions([]);
-        return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const history: SmartReplyInput['history'] = currentMessages.slice(-5).map(msg => ({
-        text: msg.text,
-        isFromCurrentUser: msg.uid === user.uid,
-      }));
-
-      const result = await suggestReplies({ history });
-      setSuggestions(result.suggestions || []);
-    } catch (error) {
-      console.error("Error fetching smart replies:", error);
-      setSuggestions([]); // Clear suggestions on error
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [user, isGenerating]);
-
-
-  // Load messages in realtime and trigger smart replies
-  useEffect(() => {
-    if (!user || !db) return;
-    const q = query(collection(db, "messages"), orderBy("createdAt"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FirestoreMessage));
-      setMessages(newMessages);
-      getSmartReplies(newMessages);
-    });
-    return unsubscribe;
-  }, [user, db, getSmartReplies]);
-
-
-  if (loading) {
-    return <Loading />;
-  }
-
-  if (!user) {
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
-            <Card className="w-[450px]">
-                <CardHeader className="text-center">
-                <CardTitle>Welcome to ConnectNow</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                    <Button onClick={handleSignIn}>Sign in with Google</Button>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-2xl h-[90vh] flex flex-col">
-        <CardHeader>
-          <CardTitle className="text-center">Realtime Chat</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
-            <ScrollArea className="flex-1 pr-4">
-                <div className="space-y-4">
-                {messages.map((msg) => (
-                    <div key={msg.id} className={`flex items-start gap-3 ${msg.uid === user.uid ? 'justify-end' : ''}`}>
-                         {msg.uid !== user.uid && (
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={msg.photoURL} />
-                                <AvatarFallback>{msg.displayName?.charAt(0) || 'U'}</AvatarFallback>
-                            </Avatar>
-                         )}
-                        <div className={`p-3 rounded-lg max-w-xs ${msg.uid === user.uid ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                            <p className="text-xs text-muted-foreground font-semibold mb-1">{msg.displayName}</p>
-                            <p>{msg.text}</p>
-                        </div>
-                        {msg.uid === user.uid && (
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={user.photoURL || undefined} />
-                                <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
-                            </Avatar>
-                         )}
-                    </div>
-                ))}
-                </div>
-            </ScrollArea>
-
-            <div className="border-t pt-4">
-                {suggestions.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                        {suggestions.map((suggestion, index) => (
-                        <Button
-                            key={index}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            disabled={isGenerating}
-                        >
-                            {suggestion}
-                        </Button>
-                        ))}
-                    </div>
-                )}
-                <form onSubmit={handleFormSubmit} className="flex gap-2">
-                    <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Type a message..."
-                    />
-                    <Button type="submit">Send</Button>
-                </form>
-            </div>
-        </CardContent>
-      </Card>
+const BottomNavItem = ({ icon: Icon, label, isActive }: { icon: any, label: string, isActive?: boolean }) => (
+    <div className={`flex flex-col items-center gap-1 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+        <Icon className="w-6 h-6"/>
+        <span className="text-xs">{label}</span>
     </div>
-  );
-}
+)
+
+const ChatListItem = ({ chat }: { chat: (typeof chats)[0] }) => (
+    <div className="flex items-center gap-4 p-3 hover:bg-muted/50 cursor-pointer">
+        <Avatar className="h-12 w-12">
+            <AvatarImage src={chat.avatar} alt={chat.name}/>
+            <AvatarFallback>{chat.name.charAt(0)}</AvatarFallback>
+            {chat.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full"/>}
+        </Avatar>
+        <div className="flex-1">
+            <div className="flex justify-between items-center">
+                <h3 className="font-semibold">{chat.name}</h3>
+                <p className={`text-xs ${chat.unread > 0 ? 'text-primary' : 'text-muted-foreground'}`}>{chat.time}</p>
+            </div>
+            <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
+                {chat.unread > 0 ? (
+                    <Badge variant="default" className="h-5 w-5 flex items-center justify-center p-0">{chat.unread}</Badge>
+                ) : (
+                    chat.status && <Badge variant={chat.status as any} />
+                )}
+            </div>
+        </div>
+    </div>
+)
 
 
 export default function ChatPage() {
-  const { auth } = useFirebase();
-  
-  return auth ? <ChatPageContent /> : <Loading />;
+    return (
+        <div className="flex flex-col h-screen max-w-md mx-auto bg-background border-x">
+            {/* Header */}
+            <header className="flex items-center justify-between p-4 bg-card text-card-foreground shadow-sm">
+                <h1 className="text-xl font-bold">ConverseHub</h1>
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon"><Camera className="w-6 h-6"/></Button>
+                    <Button variant="ghost" size="icon"><Search className="w-6 h-6"/></Button>
+                </div>
+            </header>
+
+            {/* Top Navigation */}
+            <nav className="flex justify-around border-b">
+                <Button variant="ghost" className="flex-1 rounded-none text-primary border-b-2 border-primary h-12">Chats</Button>
+                <Button variant="ghost" className="flex-1 rounded-none text-muted-foreground h-12">Status</Button>
+                <Button variant="ghost" className="flex-1 rounded-none text-muted-foreground h-12">Channels</Button>
+                <Button variant="ghost" className="flex-1 rounded-none text-muted-foreground h-12">Calls</Button>
+            </nav>
+
+            {/* Main Content */}
+            <main className="flex-1 overflow-y-auto">
+                <div className="divide-y">
+                    {chats.map(chat => <ChatListItem key={chat.id} chat={chat} />)}
+                </div>
+            </main>
+            
+            {/* FAB */}
+            <div className="absolute bottom-20 right-4">
+                 <Button className="rounded-full w-14 h-14 bg-green-500 hover:bg-green-600 shadow-lg">
+                    <Plus className="w-8 h-8"/>
+                 </Button>
+            </div>
+
+            {/* Bottom Navigation */}
+            <footer className="flex justify-around items-center p-2 border-t bg-card">
+                 <BottomNavItem icon={MessageSquare} label="Messages" isActive/>
+                 <BottomNavItem icon={Bell} label="Updates"/>
+                 <BottomNavItem icon={Users} label="Communities"/>
+                 <BottomNavItem icon={Video} label="Calls"/>
+            </footer>
+
+        </div>
+    )
 }
