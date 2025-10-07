@@ -6,6 +6,7 @@ export type User = {
   name: string;
   avatar: string;
   status: 'online' | 'offline' | 'away';
+  channels?: string[]; // Array of channel IDs
 };
 
 export type Message = {
@@ -37,7 +38,7 @@ export type Chat = {
 };
 
 export type Status = {
-  id: string;
+  id:string;
   userId: string;
   userName: string;
   userAvatar: string;
@@ -46,4 +47,12 @@ export type Status = {
   timestamp: Timestamp;
   duration: number; // in seconds
   viewers: string[]; // array of user IDs
+};
+
+export type Channel = {
+    id: string;
+    name: string;
+    description: string;
+    ownerId: string;
+    memberIds: string[];
 };

@@ -23,6 +23,13 @@
         "profileId": {
           "type": "string",
           "description": "Reference to UserProfile. (Relationship: User 1:1 UserProfile)"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "An array of Channel IDs the user is a member of."
         }
       },
       "required": [
@@ -230,6 +237,37 @@
         }
       },
       "required": ["id", "userId", "userName", "userAvatar", "type", "content", "timestamp", "duration", "viewers"]
+    },
+    "Channel": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Channel",
+      "description": "Represents a broadcast channel for one-to-many communication.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the channel."
+        },
+        "description": {
+          "type": "string",
+          "description": "A short description of the channel's purpose."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The User ID of the channel's creator/owner."
+        },
+        "memberIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "An array of User IDs that are members of the channel."
+        }
+      },
+      "required": ["id", "name", "ownerId", "memberIds"]
     }
   },
   "auth": {
@@ -342,8 +380,44 @@
             }
           ]
         }
+      },
+      {
+        "path": "/channels/{channelId}",
+        "definition": {
+          "entityName": "Channel",
+          "schema": {
+            "$ref": "#/entities/Channel"
+          },
+          "description": "Stores metadata for each broadcast channel.",
+          "params": [
+            {
+              "name": "channelId",
+              "description": "The unique identifier for the channel."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/channels/{channelId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/entities/Message"
+          },
+          "description": "Stores all messages for a specific channel.",
+          "params": [
+            {
+              "name": "channelId",
+              "description": "The ID of the channel."
+            },
+            {
+              "name": "messageId",
+              "description": "The ID of the message."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability, following the specified design principles. It leverages path-based ownership for user-specific data and denormalization to avoid hierarchical authorization dependencies. \n\n*   **Users and UserProfiles:** User data and profiles are separated into distinct collections. Each user has a dedicated document in `/users/{userId}` and a corresponding profile in `/user_profiles/{profileId}`. The `User` document contains the `profileId` to establish the 1:1 relationship. This approach uses Structural Segregation, avoiding mixing data with different access requirements in the same collection.\n*   **Projects:** Each user can own multiple projects, structured using path-based ownership under `/users/{userId}/projects/{projectId}`. The `Project` entity includes a `userId` to reference the owning user, reinforcing ownership. This also avoids the need to query across collections to get project data.  Google Analytics setting resides within the `Project` document itself, adhering to predictability within the schema.\n*   **Chats:** A top-level `chats` collection is added to store conversation metadata for the main chat list. This allows for efficient querying of a user's conversations without needing to read all messages. Each document contains denormalized participant information for display purposes.\n*   **Messages:**  Messages are nested in a subcollection under the chat they belong to: `/chats/{chatId}/messages/{messageId}`. This is a standard and scalable pattern for chat applications. It allows for efficient querying of messages for a specific chat without loading all messages from all chats. Security rules can be applied at the `/chats/{chatId}` level to control access to the messages within.\n*   **Statuses:** A top-level `statuses` collection holds all status posts. This allows for efficient querying of all statuses created in the last 24 hours. Each document contains denormalized user information (`userName`, `userAvatar`) to avoid extra lookups when displaying the status list. The `viewers` array allows for real-time tracking of who has seen a status.\n\nThis design enables Authorization Independence because all authorization is based on the current user's `uid` and the explicit `userId` stored within the documents. There are no `get()` calls needed to determine access, as the necessary context is either derived from the path or included in the document itself. The hierarchical structure, combined with denormalization, supports QAPs by enabling secure list operations at each level.  For example, listing messages within a project only requires checking the user's ownership of the parent project, not individual message permissions."
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability, following the specified design principles. It leverages path-based ownership for user-specific data and denormalization to avoid hierarchical authorization dependencies. \n\n*   **Users and UserProfiles:** User data and profiles are separated into distinct collections. Each user has a dedicated document in `/users/{userId}` and a corresponding profile in `/user_profiles/{profileId}`. The `User` document contains the `profileId` to establish the 1:1 relationship. This approach uses Structural Segregation, avoiding mixing data with different access requirements in the same collection.\n*   **Projects:** Each user can own multiple projects, structured using path-based ownership under `/users/{userId}/projects/{projectId}`. The `Project` entity includes a `userId` to reference the owning user, reinforcing ownership. This also avoids the need to query across collections to get project data.  Google Analytics setting resides within the `Project` document itself, adhering to predictability within the schema.\n*   **Chats:** A top-level `chats` collection is added to store conversation metadata for the main chat list. This allows for efficient querying of a user's conversations without needing to read all messages. Each document contains denormalized participant information for display purposes.\n*   **Messages:**  Messages are nested in a subcollection under the chat they belong to: `/chats/{chatId}/messages/{messageId}`. This is a standard and scalable pattern for chat applications. It allows for efficient querying of messages for a specific chat without loading all messages from all chats. Security rules can be applied at the `/chats/{chatId}` level to control access to the messages within.\n*   **Statuses:** A top-level `statuses` collection holds all status posts. This allows for efficient querying of all statuses created in the last 24 hours. Each document contains denormalized user information (`userName`, `userAvatar`) to avoid extra lookups when displaying the status list. The `viewers` array allows for real-time tracking of who has seen a status.\n*  **Channels**: A top-level `channels` collection stores metadata for each broadcast channel. This allows for efficient querying of all channels. Messages within a channel are stored in a nested subcollection `/channels/{channelId}/messages/{messageId}` for scalability and granular access control. \n\nThis design enables Authorization Independence because all authorization is based on the current user's `uid` and the explicit `userId` stored within the documents. There are no `get()` calls needed to determine access, as the necessary context is either derived from the path or included in the document itself. The hierarchical structure, combined with denormalization, supports QAPs by enabling secure list operations at each level.  For example, listing messages within a project only requires checking the user's ownership of the parent project, not individual message permissions."
   }
 }
