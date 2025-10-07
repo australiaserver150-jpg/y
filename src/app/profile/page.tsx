@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -110,7 +109,12 @@ function ProfilePageContent() {
     }
   }
 
-  if (authLoading || initialLoading || !db || !storage) {
+  if (authLoading || initialLoading) {
+    return <Loading />;
+  }
+  
+  if (!user) {
+    // This case should ideally be handled by the redirect in useEffect, but as a fallback
     return <Loading />;
   }
 
@@ -182,7 +186,10 @@ function ProfilePageContent() {
 }
 
 export default function ProfilePage() {
-    return (
-        <ProfilePageContent />
-    )
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+    
+    return isClient ? <ProfilePageContent /> : <Loading />;
 }

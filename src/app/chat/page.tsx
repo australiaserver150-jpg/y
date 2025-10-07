@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function ChatPage() {
+function ChatPageContent() {
   const [user, loading] = useAuthState(auth);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
@@ -25,7 +25,7 @@ export default function ChatPage() {
 
   // Load messages in realtime
   useEffect(() => {
-    if (!user) return;
+    if (!user || !db) return;
     const q = query(collection(db, "messages"), orderBy("createdAt"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -36,7 +36,7 @@ export default function ChatPage() {
   // Send message
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !user) return;
+    if (!input.trim() || !user || !db) return;
     await addDoc(collection(db, "messages"), {
       text: input,
       uid: user.uid,
@@ -109,4 +109,14 @@ export default function ChatPage() {
       </Card>
     </div>
   );
+}
+
+
+export default function ChatPage() {
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  return isClient ? <ChatPageContent /> : <Loading />;
 }

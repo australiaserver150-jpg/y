@@ -4,7 +4,7 @@ import { auth, db } from "../firebase/client";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   Card,
@@ -17,7 +17,7 @@ import {
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/hooks/use-toast";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const { toast } = useToast();
   
@@ -97,4 +97,14 @@ export default function LoginPage() {
       </Card>
     </div>
   );
+}
+
+
+export default function LoginPage() {
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  return isClient ? <LoginPageContent /> : <Loading />;
 }

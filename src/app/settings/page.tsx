@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loading } from "@/components/Loading";
 import { auth } from "@/firebase/client";
 
@@ -36,7 +35,10 @@ function ProtectedSettingsPage() {
 }
 
 export default function SettingsPage() {
-  return (
-      <ProtectedSettingsPage />
-  );
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    return isClient ? <ProtectedSettingsPage /> : <Loading />;
 }
