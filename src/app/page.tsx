@@ -85,7 +85,7 @@ export default function AuthPage() {
           <button
             onClick={handleSignIn}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2"
           >
             <img src="/icons/google.svg" alt="Google" className="w-5 h-5"/>
             {loading ? "Signing in..." : "Sign in with Gmail"}
