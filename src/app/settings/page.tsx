@@ -17,14 +17,6 @@ function SettingsPageContent() {
   );
 }
 
-export default function SettingsPage() {
-  return (
-    <AuthProvider>
-      <ProtectedSettingsPage />
-    </AuthProvider>
-  );
-}
-
 function ProtectedSettingsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -40,4 +32,12 @@ function ProtectedSettingsPage() {
   }
 
   return <SettingsPageContent />;
+}
+
+export default function SettingsPage() {
+  return (
+    <AuthProvider>
+      <ProtectedSettingsPage />
+    </AuthProvider>
+  );
 }
