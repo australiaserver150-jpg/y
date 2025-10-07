@@ -1,10 +1,10 @@
 "use client";
 
 import { useFirebase } from "../firebase/provider";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect, useState } from "react";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useEffect } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   Card,
@@ -16,22 +16,13 @@ import {
 } from "@/components/ui/card";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
 
 export default function LoginPage() {
   const { auth, db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   
-  const [user, loading] = useAuthState(auth);
-  const [hostname, setHostname] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setHostname(window.location.hostname);
-    }
-  }, []);
+  const [user, loading] = useAuthState(auth!);
 
   useEffect(() => {
     if (!loading && user) {
@@ -66,11 +57,19 @@ export default function LoginPage() {
       router.push("/chat");
     } catch (error: any) {
       console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Sign-in failed!",
-        description: error.message,
-      });
+      if (error.code === 'auth/popup-blocked') {
+         toast({
+          variant: "destructive",
+          title: "Popup blocked!",
+          description: "Please allow popups for this site in your browser and try again.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Sign-in failed!",
+          description: error.message,
+        });
+      }
     }
   };
 
@@ -96,21 +95,6 @@ export default function LoginPage() {
             Sign in with Google
           </button>
         </CardContent>
-        {hostname && (
-          <CardFooter>
-            <Alert>
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>Action Required!</AlertTitle>
-              <AlertDescription>
-                To fix the sign-in error, add the following domain to your Firebase project's authorized domains list:
-                <div className="font-mono bg-muted p-2 rounded-md my-2 text-sm">
-                  {hostname}
-                </div>
-                You also need to add 'localhost'.
-              </AlertDescription>
-            </Alert>
-          </CardFooter>
-        )}
       </Card>
     </div>
   );
