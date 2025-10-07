@@ -7,8 +7,8 @@ import { Toaster } from '@/components/ui/toaster';
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
 
 export const metadata: Metadata = {
-  title: 'Firebase Studio App',
-  description: 'A minimal Next.js application with Google Login.',
+  title: 'ConverseHub Auth Foundation',
+  description: 'A minimal Next.js application with Google and Email/Password Login.',
 };
 
 export default function RootLayout({

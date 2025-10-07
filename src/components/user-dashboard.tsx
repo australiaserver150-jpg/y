@@ -1,36 +1,29 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
-export default function ProfilePage() {
-  const { user, loading } = useUser();
+export function UserDashboard() {
+  const { user } = useUser();
   const auth = useAuth();
-  const router = useRouter();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
 
   const handleSignOut = async () => {
     if (auth) {
       await auth.signOut();
-      router.push('/');
+      toast({
+        title: 'Signed out',
+        description: 'You have been successfully signed out.',
+      });
     }
   };
 
-  if (loading || !user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (!user) {
+    return null; // Or a loading spinner
   }
 
   const fallback = user.displayName ? user.displayName.charAt(0) : user.email!.charAt(0);
@@ -43,7 +36,7 @@ export default function ProfilePage() {
             <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
             <AvatarFallback className="text-4xl">{fallback.toUpperCase()}</AvatarFallback>
           </Avatar>
-          <CardTitle className="text-3xl font-bold">{user.displayName}</CardTitle>
+          <CardTitle className="text-3xl font-bold">Welcome, {user.displayName || 'User'}!</CardTitle>
           <CardDescription>{user.email}</CardDescription>
         </CardHeader>
         <CardContent>
