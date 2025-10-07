@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { FirebaseProvider } from '@/firebase/provider';
 
 export const metadata: Metadata = {
   title: 'ConnectNow',
@@ -12,9 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <FirebaseClientProvider>
+        <FirebaseProvider>
           {children}
-        </FirebaseClientProvider>
+        </FirebaseProvider>
         <Toaster />
       </body>
     </html>

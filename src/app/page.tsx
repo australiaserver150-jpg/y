@@ -9,20 +9,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  signInWithPopup,
-  GoogleAuthProvider
+  signInWithPopup
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Loading } from "@/components/Loading";
-import { useAuth } from "@/firebase/auth/auth-provider";
+import { useFirebase } from "@/firebase/provider";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { auth, db, provider } = useFirebase();
+  const [user, authLoading] = useAuthState(auth);
   const [loading, setLoading] = useState(false);
-  const { user, auth, db, loading: authLoading } = useAuth();
   
   useEffect(() => {
     if (!authLoading && user) {
@@ -33,7 +34,6 @@ export default function AuthPage() {
   const handleSignIn = async () => {
     if (!auth || !db) return;
     setLoading(true);
-    const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;

@@ -22,7 +22,8 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/icons";
-import { useAuth } from "@/firebase/auth/auth-provider";
+import { useFirebase } from "@/firebase/provider";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -36,7 +37,8 @@ function ChatLayout() {
     string | null
   >(initialConversations[0]?.id || null);
 
-  const { user, auth, db, loading } = useAuth();
+  const { auth, db } = useFirebase();
+  const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const [localUser, setLocalUser] = React.useState<User | null>(null);
 

@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useAuth } from "@/firebase/auth/auth-provider";
+import { useFirebase } from "@/firebase/provider";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loading } from "@/components/Loading";
@@ -18,7 +19,8 @@ function SettingsPageContent() {
 }
 
 function ProtectedSettingsPage() {
-  const { user, loading } = useAuth();
+  const { auth } = useFirebase();
+  const [user, loading] = useAuthState(auth);
   const router = useRouter();
 
   useEffect(() => {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/firebase/auth/auth-provider";
+import { useFirebase } from "@/firebase/provider";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -16,7 +17,8 @@ import { Camera } from "lucide-react";
 import { Loading } from "@/components/Loading";
 
 function ProfilePageContent() {
-  const { user, auth, db, storage, loading: authLoading } = useAuth();
+  const { auth, db, storage } = useFirebase();
+  const [user, authLoading] = useAuthState(auth);
   const router = useRouter();
   const { toast } = useToast();
   const [displayName, setDisplayName] = useState("");
