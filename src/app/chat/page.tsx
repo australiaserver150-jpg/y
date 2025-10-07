@@ -39,7 +39,7 @@ function ChatLayout() {
     string | null
   >(initialConversations[0]?.id || null);
 
-  const [user, loading] = useAuthState(auth);
+  const [user, loading] = useAuthState(auth!);
   const router = useRouter();
   const [localUser, setLocalUser] = React.useState<User | null>(null);
 
@@ -122,7 +122,7 @@ function ChatLayout() {
 
   const { isMobile } = useSidebar();
   
-  if (loading || !user || !localUser) {
+  if (loading || !user || !localUser || !db) {
     return <Loading />;
   }
 

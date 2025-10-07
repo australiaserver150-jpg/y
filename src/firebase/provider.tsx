@@ -10,17 +10,29 @@ import { getStorage, FirebaseStorage } from "firebase/storage";
 import { Loading } from "@/components/Loading";
 
 interface FirebaseContextProps {
-  app: FirebaseApp;
-  auth: Auth;
-  db: Firestore;
-  storage: FirebaseStorage;
-  provider: GoogleAuthProvider;
+  app: FirebaseApp | null;
+  auth: Auth | null;
+  db: Firestore | null;
+  storage: FirebaseStorage | null;
+  provider: GoogleAuthProvider | null;
 }
 
-const FirebaseContext = createContext<FirebaseContextProps | null>(null);
+const FirebaseContext = createContext<FirebaseContextProps>({
+  app: null,
+  auth: null,
+  db: null,
+  storage: null,
+  provider: null,
+});
 
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
-  const [firebaseState, setFirebaseState] = useState<FirebaseContextProps | null>(null);
+  const [firebaseState, setFirebaseState] = useState<FirebaseContextProps>({
+    app: null,
+    auth: null,
+    db: null,
+    storage: null,
+    provider: null,
+  });
 
   useEffect(() => {
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -31,21 +43,11 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     setFirebaseState({ app, auth, db, storage, provider });
   }, []);
 
-  if (!firebaseState) {
+  if (!firebaseState.app) {
     return <Loading />;
   }
 
-  return (
-    <FirebaseContext.Provider value={firebaseState}>
-      {children}
-    </FirebaseContext.Provider>
-  );
+  return <FirebaseContext.Provider value={firebaseState}>{children}</FirebaseContext.Provider>;
 };
 
-export const useFirebase = () => {
-    const context = useContext(FirebaseContext);
-    if (context === null) {
-        throw new Error("useFirebase must be used within a FirebaseProvider");
-    }
-    return context;
-};
+export const useFirebase = () => useContext(FirebaseContext);

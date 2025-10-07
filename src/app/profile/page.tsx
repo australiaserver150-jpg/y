@@ -19,7 +19,7 @@ import { useFirebase } from "@/firebase/provider";
 
 function ProfilePageContent() {
   const { auth, db, storage } = useFirebase();
-  const [user, authLoading] = useAuthState(auth);
+  const [user, authLoading] = useAuthState(auth!);
   const router = useRouter();
   const { toast } = useToast();
   const [displayName, setDisplayName] = useState("");
@@ -111,7 +111,7 @@ function ProfilePageContent() {
     }
   }
 
-  if (authLoading || initialLoading) {
+  if (authLoading || initialLoading || !db || !storage) {
     return <Loading />;
   }
 

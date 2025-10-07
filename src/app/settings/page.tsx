@@ -20,7 +20,7 @@ function SettingsPageContent() {
 
 function ProtectedSettingsPage() {
   const { auth } = useFirebase();
-  const [user, loading] = useAuthState(auth);
+  const [user, loading] = useAuthState(auth!);
   const router = useRouter();
 
   useEffect(() => {
