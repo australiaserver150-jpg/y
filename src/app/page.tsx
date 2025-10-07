@@ -10,14 +10,13 @@ import {
 } from "@/components/ui/card";
 import {
   signInWithPopup,
+  GoogleAuthProvider
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Loading } from "@/components/Loading";
-import Image from 'next/image';
 import { useAuth } from "@/firebase/auth/auth-provider";
-import { GoogleAuthProvider } from "firebase/auth";
 
 export default function AuthPage() {
   const router = useRouter();
