@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db, auth } from "@/firebase/client";
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -11,14 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useFirebase } from "@/firebase/provider";
 
 function ChatPageContent() {
-  const [user, loading] = useAuthState(auth);
+  const { auth, db } = useFirebase();
+  const [user, loading] = useAuthState(auth!);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
 
   // Google Sign-In
   const handleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
   };
@@ -31,7 +33,7 @@ function ChatPageContent() {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
     return unsubscribe;
-  }, [user]);
+  }, [user, db]);
 
   // Send message
   const sendMessage = async (e: React.FormEvent) => {

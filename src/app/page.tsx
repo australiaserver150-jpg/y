@@ -1,6 +1,5 @@
 "use client";
 
-import { auth, db } from "../firebase/client";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -16,12 +15,15 @@ import {
 } from "@/components/ui/card";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebase } from "@/firebase/provider";
 
 function LoginPageContent() {
   const router = useRouter();
   const { toast } = useToast();
+  const { auth, db } = useFirebase();
   
-  const [user, loading] = useAuthState(auth);
+  // The hook needs a valid auth object. It can be null initially.
+  const [user, loading] = useAuthState(auth!);
 
   useEffect(() => {
     if (!loading && user) {
