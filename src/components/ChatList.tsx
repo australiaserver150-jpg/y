@@ -108,7 +108,7 @@ export function ChatList() {
   );
 }
 
-export function UserList() {
+export function useUserList() {
     const { user: currentUser } = useUser();
     const firestore = useFirestore();
     const [users, setUsers] = useState<DocumentData[]>([]);
@@ -117,26 +117,30 @@ export function UserList() {
     const { toast } = useToast();
 
     useEffect(() => {
-        if (!firestore || !currentUser) return;
-        setLoading(true);
-
+        if (!firestore) return;
+        
         const usersCol = collection(firestore, 'users');
-        const unsubscribe = onSnapshot(usersCol, (snap) => {
-            const usersData = snap.docs.map(d => ({uid: d.id, ...d.data()})).filter(u => u.uid !== currentUser.uid);
+        const unsubscribeUsers = onSnapshot(usersCol, (snap) => {
+            const usersData = snap.docs.map(d => ({uid: d.id, ...d.data()})).filter(u => u.uid !== currentUser?.uid);
             setUsers(usersData);
             setLoading(false);
         }, (error) => {
             console.error("Error fetching users:", error);
             setLoading(false);
         });
-        
-        const currentUserDoc = doc(firestore, 'users', currentUser.uid);
-        const unsubProfile = onSnapshot(currentUserDoc, (snap) => {
-            setCurrentUserProfile(snap.data());
-        });
+
+        let unsubProfile = () => {};
+        if (currentUser) {
+            const currentUserDoc = doc(firestore, 'users', currentUser.uid);
+            unsubProfile = onSnapshot(currentUserDoc, (snap) => {
+                setCurrentUserProfile(snap.data());
+            });
+        } else {
+           setCurrentUserProfile(null);
+        }
 
         return () => {
-          unsubscribe();
+          unsubscribeUsers();
           unsubProfile();
         }
     }, [firestore, currentUser]);
@@ -157,7 +161,30 @@ export function UserList() {
         }
     }
 
-    if (loading || !currentUserProfile) {
+    return { users, loading, currentUser, currentUserProfile, sendFriendRequest };
+}
+
+
+export function UserList() {
+    const { users, loading, currentUserProfile, sendFriendRequest } = useUserList();
+    
+    const getButtonState = (otherUser: any) => {
+        if (!currentUserProfile) {
+            return <Button disabled>Loading...</Button>;
+        }
+        if (currentUserProfile.friends?.includes(otherUser.uid)) {
+            return <Button disabled>Friends</Button>
+        }
+        if (currentUserProfile.sentRequests?.includes(otherUser.uid)) {
+            return <Button disabled>Request Sent</Button>
+        }
+        if (currentUserProfile.friendRequests?.includes(otherUser.uid)) {
+             return <Button disabled>Accept Request</Button>
+        }
+        return <Button onClick={() => sendFriendRequest(otherUser.uid)}>Add Friend</Button>
+    }
+
+    if (loading) {
          return (
             <div className="p-3 space-y-4">
                 {[...Array(3)].map((_, i) => (
@@ -172,19 +199,6 @@ export function UserList() {
         )
     }
     
-    const getButtonState = (otherUser: any) => {
-        if (currentUserProfile.friends?.includes(otherUser.uid)) {
-            return <Button disabled>Friends</Button>
-        }
-        if (currentUserProfile.sentRequests?.includes(otherUser.uid)) {
-            return <Button disabled>Request Sent</Button>
-        }
-        if (currentUserProfile.friendRequests?.includes(otherUser.uid)) {
-             return <Button disabled>Accept Request</Button>
-        }
-        return <Button onClick={() => sendFriendRequest(otherUser.uid)}>Add Friend</Button>
-    }
-
     return (
         <div className="flex flex-col">
             {users.map((u) => (
@@ -217,6 +231,11 @@ export function FriendList() {
     const unsub = onSnapshot(doc(firestore, 'users', user.uid), async (snap) => {
       const userData = snap.data();
       if (userData?.friends) {
+        if (userData.friends.length === 0) {
+            setFriends([]);
+            setLoading(false);
+            return;
+        }
         const friendPromises = userData.friends.map((friendId: string) => getDoc(doc(firestore, 'users', friendId)));
         const friendDocs = await Promise.all(friendPromises);
         const friendsData = friendDocs.map(d => ({uid: d.id, ...d.data()}));
@@ -241,6 +260,10 @@ export function FriendList() {
         ))}
       </div>
     );
+  }
+
+  if (friends.length === 0) {
+    return <p className="text-center text-muted-foreground p-4">You have no friends yet. Find some in the Users tab!</p>
   }
 
   return (
@@ -274,11 +297,13 @@ export function RequestList() {
 
         const unsub = onSnapshot(doc(firestore, 'users', user.uid), async (snap) => {
             const userData = snap.data();
-            if (userData?.friendRequests) {
+            if (userData?.friendRequests && userData.friendRequests.length > 0) {
                 const requestPromises = userData.friendRequests.map((uid: string) => getDoc(doc(firestore, 'users', uid)));
                 const requestDocs = await Promise.all(requestPromises);
-                const requestData = requestDocs.map(d => ({uid: d.id, ...d.data()}));
+                const requestData = requestDocs.filter(d => d.exists()).map(d => ({uid: d.id, ...d.data()}));
                 setRequests(requestData);
+            } else {
+                setRequests([]);
             }
             setLoading(false);
         });
