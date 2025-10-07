@@ -21,6 +21,21 @@
         "onlineStatus": {
           "type": "boolean",
           "description": "Indicates if the user is currently online."
+        },
+        "friends": {
+            "type": "array",
+            "description": "An array of user IDs who are friends.",
+            "items": { "type": "string" }
+        },
+        "friendRequests": {
+            "type": "array",
+            "description": "An array of user IDs who have sent a friend request.",
+            "items": { "type": "string" }
+        },
+        "sentRequests": {
+            "type": "array",
+            "description": "An array of user IDs to whom a friend request has been sent.",
+            "items": { "type": "string" }
         }
       },
       "required": [

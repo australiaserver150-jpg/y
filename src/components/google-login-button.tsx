@@ -61,6 +61,9 @@ export default function GoogleLoginButton() {
             profilePicture: user.photoURL,
             onlineStatus: true,
             createdAt: serverTimestamp(),
+            friends: [],
+            friendRequests: [],
+            sentRequests: [],
         };
 
         await setDoc(userRef, profileData)

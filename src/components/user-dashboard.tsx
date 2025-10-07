@@ -2,7 +2,7 @@
 import { Search } from 'lucide-react';
 import { UserNav } from './layout/user-nav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChatList, UserList } from './ChatList';
+import { ChatList, UserList, FriendList, RequestList } from './ChatList';
 import { useRouter } from 'next/navigation';
 import { Input } from './ui/input';
 
@@ -26,16 +26,31 @@ export function UserDashboard() {
             </div>
         </div>
         <Tabs defaultValue="chats" className="w-full flex flex-col flex-1">
-          <TabsList className="grid w-full grid-cols-3 rounded-none">
+          <TabsList className="grid w-full grid-cols-4 rounded-none">
             <TabsTrigger value="chats">Chats</TabsTrigger>
+            <TabsTrigger value="friends">Friends</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="settings" onClick={() => router.push('/settings')}>Settings</TabsTrigger>
           </TabsList>
           <TabsContent value="chats" className="flex-1 overflow-y-auto">
             <ChatList />
           </TabsContent>
+          <TabsContent value="friends" className="flex-1 overflow-y-auto">
+            <FriendList />
+          </TabsContent>
           <TabsContent value="users" className="flex-1 overflow-y-auto">
-            <UserList />
+            <Tabs defaultValue='all_users' className='w-full'>
+              <TabsList className='grid w-full grid-cols-2 rounded-none'>
+                <TabsTrigger value="all_users">All Users</TabsTrigger>
+                <TabsTrigger value="requests">Requests</TabsTrigger>
+              </TabsList>
+              <TabsContent value="all_users">
+                <UserList />
+              </TabsContent>
+              <TabsContent value="requests">
+                <RequestList />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </main>
