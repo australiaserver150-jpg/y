@@ -82,6 +82,7 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
   const [loading, setLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [otherUser, setOtherUser] = useState<OtherUser>(null);
+  const sendingRef = useRef(false);
 
 
   useEffect(() => {
@@ -176,44 +177,61 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
   }, [messages]);
 
   const sendText = async () => {
-    if (!user || !chatId || !text.trim() || !firestore) return;
-    const messagesCol = collection(firestore, 'chats', chatId, 'messages');
-    const messageData = {
-      senderId: user.uid,
-      text: text.trim(),
-      type: 'text' as 'text',
-      createdAt: serverTimestamp(),
-    };
-    await addDoc(messagesCol, messageData).catch(error => {
-        if (error.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: messagesCol.path,
-                operation: 'create',
-                requestResourceData: messageData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Something went wrong.',
-                description: error.message || 'Could not send message.',
-            });
-        }
-    });
+    if (!text.trim() || sendingRef.current) return;
+    if (!user || !chatId || !firestore) {
+      toast({ variant: 'destructive', title: 'Could not send message' });
+      return;
+    }
+    sendingRef.current = true;
 
-    const chatDocRef = doc(firestore, 'chats', chatId);
-    await updateDoc(chatDocRef, {
-      lastMessage: text.trim(),
-      updatedAt: serverTimestamp(),
-    });
-    setText('');
+    try {
+      const messagesCol = collection(firestore, 'chats', chatId, 'messages');
+      const messageData = {
+        senderId: user.uid,
+        text: text.trim(),
+        type: 'text' as 'text',
+        createdAt: serverTimestamp(),
+      };
+      await addDoc(messagesCol, messageData).catch(error => {
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: messagesCol.path,
+            operation: 'create',
+            requestResourceData: messageData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        } else {
+          throw error;
+        }
+      });
+  
+      const chatDocRef = doc(firestore, 'chats', chatId);
+      await updateDoc(chatDocRef, {
+        lastMessage: text.trim(),
+        updatedAt: serverTimestamp(),
+      });
+      setText('');
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Something went wrong.',
+            description: error.message || 'Could not send message.',
+        });
+    } finally {
+        sendingRef.current = false;
+    }
   };
 
-  const sendImage = async (file: File) => {
-    if (!user || !chatId || !file || !firestore || !storage) return;
-    const storageRef = ref(storage, `chatImages/${chatId}/${Date.now()}_${file.name}`);
+  const sendImage = async (file: File | null) => {
+    if (!file) return;
+    if (!user || !chatId || !storage || !firestore) {
+        toast({ variant: 'destructive', title: 'Could not send image' });
+        return;
+    }
+    sendingRef.current = true;
     
     try {
+        const storageRef = ref(storage, `chatImages/${chatId}/${Date.now()}_${file.name}`);
         const snap = await uploadBytes(storageRef, file);
         const url = await getDownloadURL(snap.ref);
         
@@ -232,13 +250,9 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
                     requestResourceData: messageData,
                 });
                 errorEmitter.emit('permission-error', permissionError);
-            } else {
-                toast({
-                    variant: 'destructive',
-                    title: 'Something went wrong.',
-                    description: error.message || 'Could not send image.',
-                });
-            }
+             } else {
+                throw error;
+             }
         });
         
         const chatDocRef = doc(firestore, 'chats', chatId);
@@ -252,6 +266,9 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
             title: 'Image upload failed',
             description: error.message || 'Could not upload image.',
         });
+    } finally {
+        sendingRef.current = false;
+        if(fileRef.current) fileRef.current.value = '';
     }
   };
   
@@ -281,18 +298,31 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
       </ScrollArea>
       <div className="flex items-center gap-2 border-t p-4">
         <Input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          ref={fileRef}
+          onChange={(e) => sendImage(e.target.files ? e.target.files[0] : null)}
+        />
+        <Button variant="ghost" size="icon" onClick={() => fileRef.current?.click()}>
+          <Paperclip />
+           <span className="sr-only">Attach image</span>
+        </Button>
+        <Input
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Type a message..."
           className="flex-1"
-          onKeyDown={(e) => e.key === 'Enter' && sendText()}
+          onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendText();
+              }
+          }}
         />
-        <input type="file" style={{ display: 'none' }} ref={fileRef} onChange={(e) => e.target.files && sendImage(e.target.files[0])} accept="image/*" />
-        <Button variant="ghost" size="icon" onClick={() => fileRef.current?.click()}>
-          <Paperclip />
-        </Button>
-        <Button onClick={sendText} disabled={!text.trim()}>
+        <Button onClick={sendText} disabled={!text.trim() || sendingRef.current}>
           <Send />
+          <span className="sr-only">Send message</span>
         </Button>
       </div>
     </div>
