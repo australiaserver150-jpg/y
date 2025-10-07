@@ -1,0 +1,60 @@
+/**
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a user-ownership model, where each user can only access their own data stored under their respective user ID.
+ *
+ * Data Structure:
+ * - All user data is stored under the `/users/{userId}` path.
+ *
+ * Key Security Decisions:
+ * - Users can only read and write their own profile data.
+ * - Listing all users is disallowed.
+ *
+ * Denormalization for Authorization:
+ * - N/A: The path-based ownership model eliminates the need for denormalization.  The `userId` in the path `/users/{userId}` is directly matched against `request.auth.uid`.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to user profile documents. Each user can only read and write their own profile.
+     * @path /users/{userId}
+     * @allow (create) User with UID 'user_abc' can create their profile document at /users/user_abc.
+     * @allow (get, update, delete) User with UID 'user_abc' can read, update, and delete their own profile document at /users/user_abc.
+     * @deny (create) User with UID 'user_xyz' cannot create a profile document at /users/user_abc.
+     * @deny (get, update, delete) User with UID 'user_xyz' cannot read, update, or delete the profile document at /users/user_abc.
+     * @principle Enforces strict user ownership for all operations on user profiles.
+     */
+    match /users/{userId} {
+      // Helper function to check if the request is made by the owner of the user document.
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      // Helper function to verify that the user is signed in.
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the user is an existing owner.
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      // Allow a user to create their own profile if the userId matches their auth UID.
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+
+      // Allow a user to get their own profile.
+      allow get: if isSignedIn() && isOwner(userId);
+
+      // Disallow listing all user profiles.
+      allow list: if false;
+
+      // Allow a user to update their own profile if they are the owner.
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+
+      // Allow a user to delete their own profile if they are the owner.
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+  }
+}
