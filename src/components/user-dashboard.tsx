@@ -25,7 +25,7 @@ export function UserDashboard() {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user && firestore) {
-        const userRef = doc(firestore, 'user_profiles', user.uid);
+        const userRef = doc(firestore, 'users', user.uid);
         const docSnap = await getDoc(userRef);
         if (docSnap.exists()) {
           setUserProfile(docSnap.data() as UserProfile);

@@ -30,7 +30,7 @@ export function EmailAuthForm() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
-      const userRef = doc(firestore, 'user_profiles', userCredential.user.uid);
+      const userRef = doc(firestore, 'users', userCredential.user.uid);
       await setDoc(userRef, {
         name: displayName,
         username: username,

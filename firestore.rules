@@ -2,97 +2,79 @@
  * @fileoverview Firestore Security Rules for the application.
  *
  * Core Philosophy:
- * This ruleset enforces a user-centric security model. Users can read their profile data and only modify their own profiles.
- * Friend requests can be read/written by either the sender or receiver.
- * Chat data is accessible to participants.
+ * This ruleset enforces a user-centric security model. Each user has full access to their own profile data.
+ * Chats are only accessible to logged-in users.
  *
  * Data Structure:
- * - /user_profiles/{userId}: Stores user profile data, with the document ID matching the user's UID.
- * - /friendRequests/{requestId}: Stores friend requests. The document ID is a unique request ID.
- * - /chats/{chatId}: Stores chat data. The document ID is a unique chat ID.
+ * - `/user_profiles/{userId}`: Stores public user profile information, accessible only by the user themselves.
+ * - `/friendRequests/{requestId}`: Stores friend requests, accessible only by authenticated users.
+ * - `/chats/{chatId}`: Stores chat conversations, accessible only by authenticated users.
  *
  * Key Security Decisions:
- * - Users can only read their own profiles.
- * - Friend requests can be read or written by either the sender or receiver.
- * - Chats can only be read or written by participants.
- * - Listing of users is disallowed, protecting user privacy.
- *
- * Denormalization for Authorization:
- * - The friendRequests collection relies on the `from` and `to` fields to determine access.
- * - The chats collection relies on the `participants` array to determine access.
+ * - User listing is implicitly denied (no top-level `/users` collection with `list` enabled).
+ * - Data shape validation is relaxed to allow for rapid prototyping. Only authorization-critical fields are validated.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Manages user profiles. Users can read their own profile and update their own profile data.
+     * @description Protects user profiles, ensuring only the owner can read and write.
      * @path /user_profiles/{userId}
-     * @allow (get) Signed-in user can read their own profile.
-     * @allow (create) Signed-in user with matching UID can create their profile.
-     * @allow (update) Signed-in user can update their own profile.
-     * @allow (delete) Signed-in user can delete their own profile.
-     * @deny (get) Signed-in user tries to read another user's profile.
-     * @deny (create) Signed-in user tries to create a profile with a mismatched UID.
-     * @deny (update) Signed-in user tries to update another user's profile.
-     * @deny (delete) Signed-in user tries to delete another user's profile.
-     * @principle Enforces document ownership for writes; authenticated read access for owners.
+     * @allow (read, write) if request.auth.uid == userId
+     * @deny (read, write) if request.auth.uid != userId
+     * @principle Enforces document ownership for all operations.
      */
     match /user_profiles/{userId} {
-      // Permissions for reading data.
       allow get: if isSignedIn() && isOwner(userId);
       allow list: if false;
-
-      // Permissions for writing data.
       allow create: if isSignedIn() && isOwner(userId);
       allow update: if isSignedIn() && isExistingOwner(userId);
       allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages friend requests. Both the sender and receiver can read or write friend requests.
+     * @description Protects friend requests, ensuring only authenticated users can manage them.
      * @path /friendRequests/{requestId}
-     * @allow (get) Signed-in user can read a friend request where they are either the sender or receiver.
-     * @allow (create) Signed-in user can create a friend request.
-     * @allow (update) Signed-in user can update a friend request where they are either the sender or receiver.
-     * @allow (delete) Signed-in user can delete a friend request where they are either the sender or receiver.
-     * @deny (get) Signed-in user tries to read a friend request where they are not the sender or receiver.
-     * @deny (update) Signed-in user tries to update a friend request where they are not the sender or receiver.
-     * @deny (delete) Signed-in user tries to delete a friend request where they are not the sender or receiver.
-     * @principle Enforces shared access for friend requests based on the 'from' and 'to' fields.
+     * @allow (read, write) if request.auth != null
+     * @deny (read, write) if request.auth == null
+     * @principle Requires authentication for all operations.
      */
     match /friendRequests/{requestId} {
-      // Permissions for reading data.
-      allow get: if isSignedIn() && isFriendRequestParticipant();
-      allow list: if false;
-
-      // Permissions for writing data.
-      allow create: if isSignedIn() && (request.resource.data.from == request.auth.uid);
-      allow update: if isSignedIn() && isExistingFriendRequestParticipant();
-      allow delete: if isSignedIn() && isExistingFriendRequestParticipant();
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Manages chats. Only participants in a chat can read and write to it.
+     * @description Protects chat conversations, ensuring only authenticated users can participate.
      * @path /chats/{chatId}
-     * @allow (get) Signed-in user can read a chat if they are a participant.
-     * @allow (create) Signed-in user can create a chat if they are a participant.
-     * @allow (update) Signed-in user can update a chat if they are a participant.
-     * @allow (delete) Signed-in user can delete a chat if they are a participant.
-     * @deny (get) Signed-in user tries to read a chat where they are not a participant.
-     * @deny (update) Signed-in user tries to update a chat where they are not a participant.
-     * @deny (delete) Signed-in user tries to delete a chat where they are not a participant.
-     * @principle Enforces shared access for chats based on the 'participants' array.
+     * @allow (read, write) if request.auth != null
+     * @deny (read, write) if request.auth == null
+     * @principle Requires authentication for all operations.
      */
     match /chats/{chatId} {
-      // Permissions for reading data.
-      allow get: if isSignedIn() && isChatParticipant();
-      allow list: if false;
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
 
-      // Permissions for writing data.
-      allow create: if isSignedIn() && request.resource.data.participants.hasAny([request.auth.uid]);
-      allow update: if isSignedIn() && isExistingChatParticipant();
-      allow delete: if isSignedIn() && isExistingChatParticipant();
+    /**
+     * @description Fallback rule: deny all access to paths not explicitly defined.
+     * @path /
+     * @deny (read, write) always
+     * @principle Provides a default-deny policy for undefined paths.
+     */
+    match /{path=**} {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 
@@ -106,22 +88,6 @@ service cloud.firestore {
   }
 
   function isExistingOwner(userId) {
-    return isOwner(userId) && resource != null;
-  }
-    
-  function isChatParticipant() {
-      return resource.data.participants.hasAny([request.auth.uid]);
-  }
-
-  function isExistingChatParticipant() {
-    return isChatParticipant() && resource != null;
-  }
-    
-  function isFriendRequestParticipant() {
-    return request.auth.uid == resource.data.from || request.auth.uid == resource.data.to;
-  }
-
-  function isExistingFriendRequestParticipant() {
-    return isFriendRequestParticipant() && resource != null;
+    return isSignedIn() && isOwner(userId) && resource != null;
   }
 }

@@ -22,13 +22,6 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
-        },
-        "friends": {
-          "type": "array",
-          "description": "An array of user IDs that are friends with this user.",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
@@ -109,6 +102,31 @@
           }
         }
       }
+    },
+    "Status": {
+      "title": "Status",
+      "description": "Represents a user's status update.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who posted the status."
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the status update."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the status was posted."
+        }
+      },
+      "required": [
+        "userId",
+        "text",
+        "timestamp"
+      ]
     }
   },
   "auth": {
@@ -117,7 +135,7 @@
     ]
   },
   "firestore": {
-    "/user_profiles/{userId}": {
+    "/users/{userId}": {
       "schema": {
         "$ref": "#/entities/UserProfile"
       },
@@ -134,6 +152,12 @@
         "$ref": "#/entities/Chat"
       },
       "description": "Stores chat conversations and their messages."
+    },
+    "/statuses/{statusId}": {
+        "schema": {
+            "$ref": "#/entities/Status"
+        },
+        "description": "Stores user status updates."
     }
   }
 }

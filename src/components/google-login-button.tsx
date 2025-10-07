@@ -1,8 +1,8 @@
 
 'use client';
+import { useAuth, useFirestore } from '@/firebase';
 import { googleProvider } from '@/firebase/client-provider';
 import { signInWithPopup } from 'firebase/auth';
-import { useAuth, useFirestore } from '@/firebase';
 import { doc, setDoc, getDocs, query, collection, where } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -47,9 +47,9 @@ export default function GoogleLoginButton() {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
-      const userRef = doc(firestore, 'user_profiles', user.uid);
+      const userRef = doc(firestore, 'users', user.uid);
       
-      const userDocs = await getDocs(query(collection(firestore, "user_profiles"), where("email", "==", user.email)));
+      const userDocs = await getDocs(query(collection(firestore, "users"), where("email", "==", user.email)));
       
       if (userDocs.empty) {
         let baseUsername = user.displayName?.toLowerCase().replace(/\s+/g, "") || user.email?.split('@')[0] || "user";
@@ -58,7 +58,7 @@ export default function GoogleLoginButton() {
         let counter = 0;
 
         while (exists) {
-            const q = query(collection(firestore, "user_profiles"), where("username", "==", username));
+            const q = query(collection(firestore, "users"), where("username", "==", username));
             const snapshot = await getDocs(q);
             if (snapshot.empty) {
             exists = false;
