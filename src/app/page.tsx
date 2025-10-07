@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   signInWithPopup,
   onAuthStateChanged,
@@ -19,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Loading } from "@/components/Loading";
+import Image from 'next/image';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function AuthPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleGoogleSignIn = async () => {
+  const handleSignIn = async () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -81,10 +81,15 @@ export default function AuthPage() {
             Sign in to start chatting with your friends.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button onClick={handleGoogleSignIn} className="w-full" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in with Google"}
-          </Button>
+        <CardContent className="flex justify-center">
+          <button
+            onClick={handleSignIn}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed"
+          >
+            <img src="/icons/google.svg" alt="Google" className="w-5 h-5"/>
+            {loading ? "Signing in..." : "Sign in with Gmail"}
+          </button>
         </CardContent>
       </Card>
     </div>
