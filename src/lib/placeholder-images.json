@@ -1,1 +1,14 @@
-{}
+{
+  "alex_chen": {
+    "url": "https://picsum.photos/seed/alex/100/100",
+    "hint": "man dark hair"
+  },
+  "anya_sharma": {
+    "url": "https://picsum.photos/seed/anya/100/100",
+    "hint": "woman dark hair"
+  },
+  "mountains_lakes": {
+    "url": "https://picsum.photos/seed/mountains/100/100",
+    "hint": "landscape"
+  }
+}
