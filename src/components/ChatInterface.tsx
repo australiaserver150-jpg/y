@@ -34,6 +34,41 @@ type Message = {
   createdAt: any;
 };
 
+type OtherUser = {
+  name?: string;
+  profilePicture?: string;
+} | null;
+
+function MessageBubble({ message, isMine, otherUser }: { message: Message, isMine: boolean, otherUser: OtherUser }) {
+  const user = useUser().user;
+  return (
+      <div className={`flex items-end gap-2 ${isMine ? 'justify-end' : 'justify-start'}`}>
+          {!isMine && (
+              <Avatar className="h-8 w-8">
+                  <AvatarImage src={otherUser?.profilePicture} />
+                  <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
+          )}
+          <div className={`max-w-[75%] rounded-lg p-3 ${isMine ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+              {message.type === 'text' && <p className="whitespace-pre-wrap">{message.text}</p>}
+              {message.type === 'image' && message.imageURL && (
+                  <img src={message.imageURL} alt="Sent" className="max-w-full rounded-md" />
+              )}
+              <p className="text-xs mt-2 text-right opacity-70">
+                  {message.createdAt?.toDate ? new Date(message.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+              </p>
+          </div>
+           {isMine && (
+              <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.photoURL || undefined} />
+                  <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
+          )}
+      </div>
+  );
+}
+
+
 export function ChatInterface({ otherUid }: { otherUid: string }) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -46,7 +81,7 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const [otherUser, setOtherUser] = useState<any>(null);
+  const [otherUser, setOtherUser] = useState<OtherUser>(null);
 
 
   useEffect(() => {
@@ -240,26 +275,7 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="flex flex-col gap-4">
           {messages.map((m) => (
-            <div key={m.id} className={`flex items-end gap-2 ${m.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}>
-              {m.senderId !== user?.uid && (
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={otherUser?.profilePicture} />
-                  <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
-                </Avatar>
-              )}
-              <div className={`max-w-xs rounded-lg p-3 ${m.senderId === user?.uid ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                {m.type === 'text' && <p>{m.text}</p>}
-                {m.type === 'image' && m.imageURL && (
-                    <img src={m.imageURL} alt="Sent" className="max-w-full rounded-md" />
-                )}
-              </div>
-              {m.senderId === user?.uid && (
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.photoURL || undefined} />
-                  <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
-                </Avatar>
-              )}
-            </div>
+            <MessageBubble key={m.id} message={m} isMine={m.senderId === user.uid} otherUser={otherUser} />
           ))}
         </div>
       </ScrollArea>
