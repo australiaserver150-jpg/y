@@ -40,7 +40,7 @@ export function ChatInput({ chatId }: { chatId: string }) {
         senderId: user.uid,
         text: text.trim(),
         type: 'text' as 'text',
-        createdAt: serverTimestamp(),
+        timestamp: serverTimestamp(),
       };
       await addDoc(messagesCol, messageData).catch(error => {
         if (error.code === 'permission-denied') {
@@ -90,7 +90,7 @@ export function ChatInput({ chatId }: { chatId: string }) {
             senderId: user.uid,
             imageURL: url,
             type: 'image' as 'image',
-            createdAt: serverTimestamp(),
+            timestamp: serverTimestamp(),
         };
         await addDoc(messagesCol, messageData).catch(error => {
              if (error.code === 'permission-denied') {

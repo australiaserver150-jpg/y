@@ -17,16 +17,17 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
 import { Loading } from './Loading';
-import { CallButton } from './CallButton';
 import { Button } from './ui/button';
 import { MessageBubble, type Message, type OtherUser } from './MessageBubble';
 import { ChatInput } from './ChatInput';
+import { useRouter } from 'next/navigation';
 
 
 export function ChatInterface({ otherUid }: { otherUid: string }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [chatId, setChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -48,7 +49,6 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
         if (!chatSnap.exists()) {
           const chatData = {
             participants: [user.uid, otherUid],
-            createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             lastMessage: '',
           };
@@ -73,15 +73,15 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
 
         const otherUserDoc = await getDoc(doc(firestore, 'users', otherUid));
         if(otherUserDoc.exists()) {
-            setOtherUser(otherUserDoc.data());
+            setOtherUser(otherUserDoc.data() as OtherUser);
         }
 
         // listen to messages
         const messagesCol = collection(firestore, 'chats', id, 'messages');
-        const q = query(messagesCol, orderBy('createdAt', 'asc'));
+        const q = query(messagesCol, orderBy('timestamp', 'asc'));
         const unsubscribe = onSnapshot(q, (snap) => {
           const arr: Message[] = [];
-          snap.forEach((d) => arr.push({ id: d.id, ...(d.data() as Message) }));
+          snap.forEach((d) => arr.push({ id: d.id, ...(d.data() as Omit<Message, 'id'>) }));
           setMessages(arr);
           setLoading(false);
         }, (error) => {
@@ -122,21 +122,19 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
   if (!chatId) return <Loading />;
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-background dark:bg-black border-x">
+    <div className="flex flex-col h-screen max-w-md mx-auto bg-background border-x">
       <header className="flex items-center gap-4 p-4 border-b sticky top-0 bg-background z-10">
-        <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </Button>
         <Avatar className="h-10 w-10">
-            <AvatarImage src={otherUser?.profilePicture} />
+            <AvatarImage src={otherUser?.profilePicture} alt={otherUser?.name || 'U'}/>
             <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <h2 className="text-xl font-bold">{otherUser?.name || 'Chat'}</h2>
-          {otherUser && <p className="text-sm text-muted-foreground">Online</p>}
+          {otherUser && <p className={`text-sm ${otherUser.onlineStatus ? 'text-green-500' : 'text-muted-foreground'}`}>{otherUser.onlineStatus ? 'Online' : 'Offline'}</p>}
         </div>
-        <CallButton calleeUid={otherUid} kind="audio" />
-        <CallButton calleeUid={otherUid} kind="video" />
       </header>
       <ScrollArea className="flex-1 p-4 bg-muted/20">
         <div className="flex flex-col gap-4">

@@ -3,7 +3,7 @@
 import { useAuth, useFirestore } from '@/firebase';
 import { googleProvider } from '@/firebase/client-provider';
 import { signInWithPopup } from 'firebase/auth';
-import { doc, setDoc, getDocs, query, collection, where } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -50,37 +50,23 @@ export default function GoogleLoginButton() {
       const user = result.user;
       
       const userRef = doc(firestore, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
       
-      const userDocs = await getDocs(query(collection(firestore, "users"), where("email", "==", user.email)));
-      
-      if (userDocs.empty) {
-        let baseUsername = user.displayName?.toLowerCase().replace(/\s+/g, "") || user.email?.split('@')[0] || "user";
-        let username = baseUsername;
-        let exists = true;
-        let counter = 0;
-
-        while (exists) {
-            const q = query(collection(firestore, "users"), where("username", "==", username));
-            const snapshot = await getDocs(q);
-            if (snapshot.empty) {
-            exists = false;
-            } else {
-            counter++;
-            username = `${baseUsername}${counter}`;
-            }
-        }
-        
+      if (!userSnap.exists()) {
+        const username = user.email!.split('@')[0];
         const profileData = {
             name: user.displayName,
             username: username,
             email: user.email,
             profilePicture: user.photoURL,
+            onlineStatus: true,
+            createdAt: serverTimestamp(),
         };
 
-        setDoc(userRef, profileData, { merge: true })
+        await setDoc(userRef, profileData)
             .then(() => {
                 toast({
-                    title: 'Signed in successfully!',
+                    title: 'Account created!',
                     description: `Welcome ${user.displayName || user.email}!`,
                 });
             })
@@ -103,7 +89,7 @@ export default function GoogleLoginButton() {
       } else {
          toast({
             title: 'Signed in successfully!',
-            description: `Welcome ${user.displayName || user.email}!`,
+            description: `Welcome back, ${user.displayName || user.email}!`,
         });
       }
 

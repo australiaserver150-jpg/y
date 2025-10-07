@@ -1,16 +1,41 @@
 'use client';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser, useStorage } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { useToast } from '@/hooks/use-toast';
+import { useRef, useState, useEffect } from 'react';
+import { Switch } from './ui/switch';
 
 export function SettingsPage() {
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
+  const storage = useStorage();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const [profile, setProfile] = useState<{name?: string; username?: string; profilePicture?: string, onlineStatus?: boolean;}>({});
+  const [newName, setNewName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user && firestore) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      getDoc(userDocRef).then(snap => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setProfile(data);
+          setNewName(data.name || '');
+        }
+      });
+    }
+  }, [user, firestore]);
 
   const handleSignOut = async () => {
     if (auth) {
@@ -18,20 +43,65 @@ export function SettingsPage() {
       router.push('/');
     }
   };
+
+  const handleNameChange = async () => {
+    if (user && firestore && newName.trim() !== '' && newName.trim() !== profile.name) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      try {
+        await updateDoc(userDocRef, { name: newName.trim() });
+        setProfile(p => ({...p, name: newName.trim()}));
+        toast({ title: 'Success', description: 'Display name updated.' });
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message });
+      }
+    }
+  };
+  
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !storage || !firestore) return;
+    
+    const storageRef = ref(storage, `profilePictures/${user.uid}`);
+    try {
+        await uploadBytes(storageRef, file);
+        const photoURL = await getDownloadURL(storageRef);
+        
+        const userDocRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userDocRef, { profilePicture: photoURL });
+        
+        setProfile(p => ({...p, profilePicture: photoURL}));
+        toast({ title: 'Success', description: 'Profile picture updated.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: `Could not upload photo: ${error.message}` });
+    }
+  };
+
+  const handleOnlineStatusChange = async (checked: boolean) => {
+    if (user && firestore) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      try {
+        await updateDoc(userDocRef, { onlineStatus: checked });
+        setProfile(p => ({...p, onlineStatus: checked}));
+        toast({ title: 'Success', description: `You are now ${checked ? 'Online' : 'Offline'}.` });
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message });
+      }
+    }
+  }
   
   if (!user) {
     return null;
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-background dark:bg-black border-x">
+    <div className="flex flex-col h-screen max-w-md mx-auto bg-background border-x">
       <header className="flex items-center gap-4 p-4 border-b sticky top-0 bg-background z-10">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </Button>
         <h1 className="text-xl font-bold">Settings</h1>
       </header>
-      <main className="flex-1 overflow-y-auto p-4">
+      <main className="flex-1 overflow-y-auto p-4 bg-muted/20">
         <Card>
           <CardHeader>
             <CardTitle>Profile</CardTitle>
@@ -40,20 +110,21 @@ export function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="flex items-center space-x-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'user'} />
-                <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}</AvatarFallback>
+                <AvatarImage src={profile.profilePicture || ''} alt={profile.name || 'user'} />
+                <AvatarFallback>{profile.name?.charAt(0) || user.email?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
-              <Button>Change Photo</Button>
+              <input type="file" ref={fileInputRef} onChange={handlePhotoChange} className="hidden" accept="image/*"/>
+              <Button onClick={() => fileInputRef.current?.click()}>Change Photo</Button>
             </div>
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
-              <Input id="displayName" defaultValue={user.displayName || ''} />
+              <Input id="displayName" value={newName} onChange={(e) => setNewName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" defaultValue={user.email || ''} readOnly disabled />
+                <Label htmlFor="username">Username</Label>
+                <Input id="username" value={profile.username || ''} readOnly disabled />
             </div>
-             <Button variant="outline">Save Changes</Button>
+             <Button variant="outline" onClick={handleNameChange}>Save Changes</Button>
           </CardContent>
         </Card>
 
@@ -61,6 +132,32 @@ export function SettingsPage() {
             <CardHeader>
                 <CardTitle>Account</CardTitle>
                 <CardDescription>Manage your account settings.</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+                <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" defaultValue={user.email || ''} readOnly disabled />
+                </div>
+                 <Button variant="outline">Change Password</Button>
+            </CardContent>
+        </Card>
+        
+        <Card className="mt-6">
+            <CardHeader>
+                <CardTitle>Privacy</CardTitle>
+                <CardDescription>Manage your privacy settings.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="online-status">Online Status</Label>
+                  <Switch id="online-status" checked={profile.onlineStatus} onCheckedChange={handleOnlineStatusChange} />
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+            <CardHeader>
+                <CardTitle>Sign Out</CardTitle>
             </CardHeader>
             <CardContent>
                 <Button variant="destructive" onClick={handleSignOut}>Sign Out</Button>
