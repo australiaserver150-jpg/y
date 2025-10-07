@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useFirebase } from "@/firebase/provider";
+import { useFirebase } from "../firebase/provider";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect } from "react";
@@ -17,11 +18,10 @@ import { Loading } from "@/components/Loading";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
-  const { auth, db } = useFirebase(); // Updated to use the hook
+  const { auth, db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   
-  // useAuthState is safe to use with a potentially null auth object
   const [user, loading] = useAuthState(auth);
 
   useEffect(() => {
@@ -31,7 +31,6 @@ export default function LoginPage() {
   }, [user, loading, router]);
   
   const handleGoogleSignIn = async () => {
-    // We check for auth and db existence before proceeding.
     if (!auth || !db) {
       toast({
         variant: "destructive",
@@ -66,7 +65,6 @@ export default function LoginPage() {
     }
   };
 
-  // Show loading spinner while auth state is resolving or Firebase is initializing
   if (loading || !auth || user) {
     return <Loading />;
   }
