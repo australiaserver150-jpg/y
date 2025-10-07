@@ -25,9 +25,6 @@ export function ChatWindow({
   
   if (!otherUser) return null;
 
-  const lastMessage = conversation.messages[conversation.messages.length - 1];
-  const lastMessageFromOtherUser = lastMessage?.sender.id !== currentUser.id ? lastMessage : undefined;
-
   return (
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between p-3 border-b shrink-0">
@@ -57,7 +54,7 @@ export function ChatWindow({
         currentUser={currentUser}
       />
       
-      <ChatInput onSendMessage={onSendMessage} lastMessage={lastMessageFromOtherUser} />
+      <ChatInput onSendMessage={onSendMessage} />
     </div>
   );
 }

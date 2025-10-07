@@ -4,15 +4,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { Paperclip, SendHorizontal, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SmartReply } from "./smart-reply";
-import type { Message } from "@/lib/types";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
-  lastMessage: Message | undefined;
 }
 
-export function ChatInput({ onSendMessage, lastMessage }: ChatInputProps) {
+export function ChatInput({ onSendMessage }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -30,11 +27,6 @@ export function ChatInput({ onSendMessage, lastMessage }: ChatInputProps) {
     }
   };
 
-  const handleSelectReply = (reply: string) => {
-    setMessage(reply);
-    textareaRef.current?.focus();
-  };
-  
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -44,7 +36,6 @@ export function ChatInput({ onSendMessage, lastMessage }: ChatInputProps) {
 
   return (
     <div className="border-t bg-background px-4 py-3">
-      <SmartReply lastMessage={lastMessage} onSelectReply={handleSelectReply} />
       <div className="relative">
         <Textarea
           ref={textareaRef}
