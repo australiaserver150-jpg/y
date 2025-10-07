@@ -27,6 +27,7 @@ export function SettingsPage() {
 
   const [profile, setProfile] = useState<{displayName?: string; username?: string; profilePicture?: string, onlineStatus?: boolean;}>({});
   const [newDisplayName, setNewDisplayName] = useState('');
+  const [newUsername, setNewUsername] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export function SettingsPage() {
           const data = snap.data();
           setProfile(data);
           setNewDisplayName(data.displayName || '');
+          setNewUsername(data.username || '');
         }
       });
     }
@@ -49,27 +51,40 @@ export function SettingsPage() {
     }
   };
 
-  const handleNameChange = async () => {
-    if (user && firestore && newDisplayName.trim() !== '' && newDisplayName.trim() !== profile.displayName) {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      try {
-        await updateDoc(userDocRef, { displayName: newDisplayName.trim() }).catch(error => {
-          if (error.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-              path: userDocRef.path,
-              operation: 'update',
-              requestResourceData: { displayName: newDisplayName.trim() }
-            });
-            errorEmitter.emit('permission-error', permissionError);
-          } else {
-            throw error;
-          }
-        });
-        setProfile(p => ({...p, displayName: newDisplayName.trim()}));
-        toast({ title: 'Success', description: 'Display name updated.' });
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
-      }
+  const handleProfileChange = async () => {
+    if (!user || !firestore) return;
+
+    const displayNameChanged = newDisplayName.trim() !== '' && newDisplayName.trim() !== profile.displayName;
+    const usernameChanged = newUsername.trim() !== '' && newUsername.trim() !== profile.username;
+
+    if (!displayNameChanged && !usernameChanged) {
+        toast({ title: 'No changes to save.' });
+        return;
+    }
+    
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const updatedData: { displayName?: string, username?: string } = {};
+
+    if(displayNameChanged) updatedData.displayName = newDisplayName.trim();
+    if(usernameChanged) updatedData.username = newUsername.trim();
+
+    try {
+      await updateDoc(userDocRef, updatedData).catch(error => {
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'update',
+            requestResourceData: updatedData
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        } else {
+          throw error;
+        }
+      });
+      setProfile(p => ({...p, ...updatedData}));
+      toast({ title: 'Success', description: 'Your profile has been updated.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   };
   
@@ -160,9 +175,9 @@ export function SettingsPage() {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
-                <Input id="username" value={profile.username || ''} readOnly disabled />
+                <Input id="username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
             </div>
-             <Button variant="outline" onClick={handleNameChange}>Save Changes</Button>
+             <Button variant="outline" onClick={handleProfileChange}>Save Changes</Button>
           </CardContent>
         </Card>
 

@@ -11,7 +11,7 @@
         },
         "username": {
           "type": "string",
-          "description": "The user's unique, fixed username."
+          "description": "The user's unique username, can be changed by the user."
         },
         "profilePicture": {
           "type": "string",
