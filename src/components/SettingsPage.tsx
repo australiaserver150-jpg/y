@@ -11,6 +11,8 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { useRef, useState, useEffect } from 'react';
 import { Switch } from './ui/switch';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export function SettingsPage() {
   const { user } = useUser();
@@ -48,7 +50,18 @@ export function SettingsPage() {
     if (user && firestore && newName.trim() !== '' && newName.trim() !== profile.name) {
       const userDocRef = doc(firestore, 'users', user.uid);
       try {
-        await updateDoc(userDocRef, { name: newName.trim() });
+        await updateDoc(userDocRef, { name: newName.trim() }).catch(error => {
+          if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'update',
+              requestResourceData: { name: newName.trim() }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          } else {
+            throw error;
+          }
+        });
         setProfile(p => ({...p, name: newName.trim()}));
         toast({ title: 'Success', description: 'Display name updated.' });
       } catch (error: any) {
@@ -67,7 +80,18 @@ export function SettingsPage() {
         const photoURL = await getDownloadURL(storageRef);
         
         const userDocRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userDocRef, { profilePicture: photoURL });
+        await updateDoc(userDocRef, { profilePicture: photoURL }).catch(error => {
+            if (error.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                  path: userDocRef.path,
+                  operation: 'update',
+                  requestResourceData: { profilePicture: photoURL }
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } else {
+                throw error;
+            }
+        });
         
         setProfile(p => ({...p, profilePicture: photoURL}));
         toast({ title: 'Success', description: 'Profile picture updated.' });
@@ -80,7 +104,18 @@ export function SettingsPage() {
     if (user && firestore) {
       const userDocRef = doc(firestore, 'users', user.uid);
       try {
-        await updateDoc(userDocRef, { onlineStatus: checked });
+        await updateDoc(userDocRef, { onlineStatus: checked }).catch(error => {
+           if (error.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                  path: userDocRef.path,
+                  operation: 'update',
+                  requestResourceData: { onlineStatus: checked }
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } else {
+                throw error;
+            }
+        });
         setProfile(p => ({...p, onlineStatus: checked}));
         toast({ title: 'Success', description: `You are now ${checked ? 'Online' : 'Offline'}.` });
       } catch (error: any) {
@@ -138,7 +173,7 @@ export function SettingsPage() {
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" defaultValue={user.email || ''} readOnly disabled />
                 </div>
-                 <Button variant="outline">Change Password</Button>
+                 <Button variant="outline" disabled>Change Password</Button>
             </CardContent>
         </Card>
         
@@ -150,7 +185,7 @@ export function SettingsPage() {
             <CardContent>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="online-status">Online Status</Label>
-                  <Switch id="online-status" checked={profile.onlineStatus} onCheckedChange={handleOnlineStatusChange} />
+                  <Switch id="online-status" checked={!!profile.onlineStatus} onCheckedChange={handleOnlineStatusChange} />
                 </div>
             </CardContent>
         </Card>

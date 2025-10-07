@@ -24,7 +24,9 @@ export default function Settings() {
             <CardDescription>Sign in to view settings</CardDescription>
           </CardHeader>
           <CardContent>
-            <GoogleLoginButton />
+            <div className="flex flex-col gap-4">
+                <GoogleLoginButton />
+            </div>
           </CardContent>
         </Card>
       </div>
