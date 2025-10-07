@@ -22,13 +22,6 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
-        },
-        "friends": {
-          "type": "array",
-          "description": "An array of user IDs that are friends with this user.",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
@@ -78,6 +71,16 @@
           "type": "string",
           "description": "The text content of the message."
         },
+        "imageURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of an image sent in the message."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["text", "image"],
+          "description": "The type of the message."
+        },
         "timestamp": {
           "type": "string",
           "format": "date-time",
@@ -86,8 +89,8 @@
       },
       "required": [
         "senderId",
-        "text",
-        "timestamp"
+        "timestamp",
+        "type"
       ]
     },
     "Chat": {
@@ -101,6 +104,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "lastMessage": {
+          "type": "string"
+        },
+        "updatedAt": {
+            "type": "string",
+            "format": "date-time"
         }
       }
     },
@@ -193,7 +203,7 @@
       },
       "description": "Stores chat conversations and their participant information."
     },
-    "/chats/{chatI d}/messages/{messageId}": {
+    "/chats/{chatId}/messages/{messageId}": {
       "schema": {
         "$ref": "#/entities/ChatMessage"
       },
