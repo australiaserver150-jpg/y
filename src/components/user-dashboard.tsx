@@ -1,6 +1,6 @@
 'use client';
 
-import { Camera, Search, Plus, MessageSquare, Users, Phone, Bell } from 'lucide-react';
+import { Camera, Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChatList } from './ChatList';
@@ -47,28 +47,9 @@ export function UserDashboard() {
         </Tabs>
       </main>
 
-       <Button className="absolute bottom-24 right-4 h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 shadow-lg">
+       <Button className="absolute bottom-8 right-4 h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 shadow-lg">
           <Plus className="h-6 w-6" />
       </Button>
-      
-      <footer className="grid grid-cols-4 items-center p-2 border-t bg-background sticky bottom-0">
-        <Button variant="ghost" className="flex flex-col h-auto">
-            <MessageSquare />
-            <span className='text-xs'>Messages</span>
-        </Button>
-         <Button variant="ghost" className="flex flex-col h-auto text-muted-foreground">
-            <Bell />
-            <span className='text-xs'>Updates</span>
-        </Button>
-        <Button variant="ghost" className="flex flex-col h-auto text-muted-foreground">
-            <Users />
-            <span className='text-xs'>Communities</span>
-        </Button>
-        <Button variant="ghost" className="flex flex-col h-auto text-muted-foreground">
-            <Phone />
-            <span className='text-xs'>Calls</span>
-        </Button>
-      </footer>
     </div>
   );
 }
