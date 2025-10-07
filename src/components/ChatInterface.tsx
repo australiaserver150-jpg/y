@@ -23,6 +23,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
 import { Loading } from './Loading';
+import { CallButton } from './CallButton';
 
 type Message = {
   id?: string;
@@ -45,6 +46,8 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [otherUser, setOtherUser] = useState<any>(null);
+
 
   useEffect(() => {
     if (!user || !firestore) return;
@@ -82,6 +85,11 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
           });
         }
         setChatId(id);
+
+        const otherUserDoc = await getDoc(doc(firestore, 'users', otherUid));
+        if(otherUserDoc.exists()) {
+            setOtherUser(otherUserDoc.data());
+        }
 
         // listen to messages
         const messagesCol = collection(firestore, 'chats', id, 'messages');
@@ -221,7 +229,13 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
         <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </Button>
-        <h2 className="text-xl font-bold">Chat</h2>
+        <Avatar className="h-10 w-10">
+            <AvatarImage src={otherUser?.profilePicture} />
+            <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+        </Avatar>
+        <h2 className="text-xl font-bold flex-1">{otherUser?.name || 'Chat'}</h2>
+        <CallButton calleeUid={otherUid} kind="audio" />
+        <CallButton calleeUid={otherUid} kind="video" />
       </header>
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="flex flex-col gap-4">
@@ -229,8 +243,8 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
             <div key={m.id} className={`flex items-end gap-2 ${m.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}>
               {m.senderId !== user?.uid && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage />
-                  <AvatarFallback>{/* Other user initial */}</AvatarFallback>
+                  <AvatarImage src={otherUser?.profilePicture} />
+                  <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
               )}
               <div className={`max-w-xs rounded-lg p-3 ${m.senderId === user?.uid ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>

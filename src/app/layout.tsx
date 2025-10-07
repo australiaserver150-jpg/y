@@ -3,6 +3,7 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { CallManager } from '@/components/CallManager';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
 
@@ -19,7 +20,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} bg-background`}>
-        <FirebaseClientProvider>{children}</FirebaseClientProvider>
+        <FirebaseClientProvider>
+          {children}
+          <CallManager />
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>

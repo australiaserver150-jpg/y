@@ -78,7 +78,10 @@
         },
         "type": {
           "type": "string",
-          "enum": ["text", "image"],
+          "enum": [
+            "text",
+            "image"
+          ],
           "description": "The type of the message."
         },
         "timestamp": {
@@ -109,8 +112,8 @@
           "type": "string"
         },
         "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -158,6 +161,21 @@
         "answer": {
           "type": "object",
           "description": "The WebRTC session description answer from the callee."
+        },
+        "type": {
+            "type": "string",
+            "enum": ["audio", "video"]
+        },
+        "status": {
+            "type": "string",
+            "enum": ["ringing", "connected", "ended"]
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "caller": {
+            "type": "string"
         }
       }
     },
