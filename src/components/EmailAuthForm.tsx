@@ -21,6 +21,7 @@ export function EmailAuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -31,9 +32,11 @@ export function EmailAuthForm() {
       await updateProfile(userCredential.user, { displayName });
       const userRef = doc(firestore, 'user_profiles', userCredential.user.uid);
       await setDoc(userRef, {
-        displayName: displayName,
+        name: displayName,
+        username: username,
         email: userCredential.user.email,
-        photoURL: userCredential.user.photoURL,
+        profilePicture: userCredential.user.photoURL,
+        friends: []
       }, { merge: true });
       toast({ title: 'Success!', description: 'Your account has been created.' });
     } catch (error: any) {
@@ -148,6 +151,17 @@ export function EmailAuthForm() {
               required
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
+            />
+          </div>
+           <div className="space-y-2">
+            <Label htmlFor="username-signup">Username</Label>
+            <Input
+              id="username-signup"
+              type="text"
+              placeholder="yourusername"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
           </div>
           <div className="space-y-2">

@@ -5,22 +5,33 @@
       "description": "Represents a user's public profile.",
       "type": "object",
       "properties": {
-        "displayName": {
+        "name": {
           "type": "string",
-          "description": "The user's display name."
+          "description": "The user's flexible display name."
+        },
+        "username": {
+          "type": "string",
+          "description": "The user's unique, fixed username."
         },
         "email": {
           "type": "string",
           "format": "email",
           "description": "The user's email address."
         },
-        "photoURL": {
+        "profilePicture": {
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
+        },
+        "friends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of user IDs that are friends with this user."
         }
       },
-      "required": ["displayName", "email"]
+      "required": ["name", "username", "email"]
     }
   },
   "auth": {

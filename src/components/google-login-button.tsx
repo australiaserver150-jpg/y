@@ -49,9 +49,11 @@ export default function GoogleLoginButton() {
       
       const userRef = doc(firestore, 'user_profiles', user.uid);
       await setDoc(userRef, {
-        displayName: user.displayName,
+        name: user.displayName,
+        username: user.email?.split('@')[0] || '',
         email: user.email,
-        photoURL: user.photoURL,
+        profilePicture: user.photoURL,
+        friends: []
       }, { merge: true });
 
       toast({
