@@ -87,14 +87,16 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "Array of user IDs in the call."
         },
         "type": {
           "type": "string",
           "enum": [
             "audio",
             "video"
-          ]
+          ],
+          "description": "The type of call."
         },
         "status": {
           "type": "string",
@@ -102,10 +104,12 @@
             "ringing",
             "connected",
             "ended"
-          ]
+          ],
+          "description": "The current status of the call."
         },
         "caller": {
-          "type": "string"
+          "type": "string",
+          "description": "The UID of the user who initiated the call."
         },
         "createdAt": {
           "type": "string",
@@ -124,7 +128,8 @@
             "sdp": {
               "type": "string"
             }
-          }
+          },
+          "description": "WebRTC offer from the caller."
         },
         "answer": {
           "type": "object",
@@ -135,9 +140,11 @@
             "sdp": {
               "type": "string"
             }
-          }
+          },
+          "description": "WebRTC answer from the callee."
         }
-      }
+      },
+      "required": ["caller", "participants", "type", "status", "createdAt"]
     }
   },
   "auth": {
@@ -173,9 +180,10 @@
     "/calls/{callId}/candidates/{candidateId}": {
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {},
+        "description": "ICE candidate for a WebRTC call."
       },
-      "description": "ICE candidates for a call"
+      "description": "A subcollection for ICE candidates for a specific call."
     }
   }
 }

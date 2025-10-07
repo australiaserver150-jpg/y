@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Inter } from 'next/font/google';
+import { Inter, Space_Grotesk } from 'next/font/google';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { CallManager } from '@/components/CallManager';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-headline' });
 
 export const metadata: Metadata = {
-  title: 'ConverseHub Auth Foundation',
-  description: 'A minimal Next.js application with Google and Email/Password Login.',
+  title: 'ConnectNow',
+  description: 'A minimal Next.js application with real-time chat and calling.',
 };
 
 export default function RootLayout({
@@ -19,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} bg-background`}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} bg-background`}>
         <FirebaseClientProvider>
           {children}
           <CallManager />

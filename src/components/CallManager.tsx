@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from "react";
 import { useUser, useFirestore } from "@/firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
@@ -22,16 +22,19 @@ export function CallManager() {
         );
 
         const unsubscribe = onSnapshot(callsQuery, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
+            snapshot.docChanges().forEach(async (change) => {
                 if (change.type === 'added') {
                     const call = change.doc.data();
                     const callId = change.doc.id;
                     const isCallee = call.caller !== user.uid;
 
                     if (isCallee) {
+                        const callerDoc = await getDoc(doc(firestore, 'users', call.caller));
+                        const callerName = callerDoc.data()?.name || 'A user';
+
                         const { id } = toast({
                             title: `Incoming ${call.type} call`,
-                            description: `Call from a user.`,
+                            description: `Call from ${callerName}.`,
                             duration: Infinity,
                             action: (
                                 <div className="flex gap-2">

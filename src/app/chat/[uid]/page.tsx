@@ -20,7 +20,7 @@ export default function ChatPage({ params }: { params: { uid: string } }) {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <h1 className="text-4xl font-extrabold text-center bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent drop-shadow-lg animate-pulse mt-4">
-              BestU ChaT
+              ConnectNow
             </h1>
             <CardDescription>Sign in to continue</CardDescription>
           </CardHeader>
