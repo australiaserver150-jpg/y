@@ -32,7 +32,7 @@ export default function AuthPage() {
   }, [user, authLoading, router]);
 
   const handleSignIn = async () => {
-    if (!auth || !db) return;
+    if (!auth || !db || !provider) return;
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, provider);
