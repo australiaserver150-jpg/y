@@ -35,3 +35,15 @@ export type Chat = {
   participantInfo: ChatParticipant[];
   chatName?: string;
 };
+
+export type Status = {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  type: 'text' | 'media';
+  content: string; // URL for media, or the text content itself
+  timestamp: Timestamp;
+  duration: number; // in seconds
+  viewers: string[]; // array of user IDs
+};
