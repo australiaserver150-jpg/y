@@ -15,19 +15,15 @@ const MessageSchema = z.object({
   isFromCurrentUser: z.boolean(),
 });
 
-export const SmartReplyInputSchema = z.object({
+const SmartReplyInputSchema = z.object({
   history: z.array(MessageSchema),
 });
 export type SmartReplyInput = z.infer<typeof SmartReplyInputSchema>;
 
-export const SmartReplyOutputSchema = z.object({
+const SmartReplyOutputSchema = z.object({
   suggestions: z.array(z.string()),
 });
 export type SmartReplyOutput = z.infer<typeof SmartReplyOutputSchema>;
-
-export async function suggestReplies(input: SmartReplyInput): Promise<SmartReplyOutput> {
-  return smartReplyFlow(input);
-}
 
 const smartReplyPrompt = ai.definePrompt({
   name: 'smartReplyPrompt',
@@ -67,3 +63,7 @@ const smartReplyFlow = ai.defineFlow(
     return output!;
   }
 );
+
+export async function suggestReplies(input: SmartReplyInput): Promise<SmartReplyOutput> {
+  return smartReplyFlow(input);
+}
