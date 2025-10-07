@@ -1,44 +1,5 @@
-
 {
   "entities": {
-    "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
-      "type": "object",
-      "description": "Represents a user of the ConnectNow application.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "The user's username."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
-        },
-        "profileId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: User 1:1 UserProfile)"
-        },
-        "channels": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "An array of Channel IDs the user is a member of."
-        }
-      },
-      "required": [
-        "id",
-        "username",
-        "email",
-        "profileId"
-      ]
-    },
     "UserProfile": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
@@ -47,277 +8,28 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
+          "description": "Unique identifier for the UserProfile entity, matching the Firebase Auth UID."
         },
         "displayName": {
           "type": "string",
           "description": "The user's display name."
         },
+        "email": {
+            "type": "string",
+            "description": "The user's email address.",
+            "format": "email"
+        },
         "avatarUrl": {
           "type": "string",
           "description": "URL of the user's avatar image.",
           "format": "uri"
-        },
-        "bio": {
-          "type": "string",
-          "description": "A short biography of the user."
         }
       },
       "required": [
         "id",
-        "displayName"
+        "displayName",
+        "email"
       ]
-    },
-    "Project": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Project",
-      "type": "object",
-      "description": "Represents a project within ConnectNow.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Project entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the project."
-        },
-        "googleAnalyticsEnabled": {
-          "type": "boolean",
-          "description": "Indicates whether Google Analytics is enabled for this project."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Project)"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "userId"
-      ]
-    },
-    "Message": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Message",
-      "type": "object",
-      "description": "Represents a message in the real-time chat.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Message entity."
-        },
-        "senderId": {
-          "type": "string",
-          "description": "Reference to User who sent the message."
-        },
-        "text": {
-          "type": "string",
-          "description": "The content of the message."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "The timestamp when the message was sent.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "senderId",
-        "text",
-        "timestamp"
-      ]
-    },
-    "Chat": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Chat",
-      "description": "Represents a conversation, either group or direct message.",
-      "type": "object",
-      "properties": {
-        "lastMessage": {
-          "type": "string",
-          "description": "The text of the last message sent."
-        },
-        "timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The time the last message was sent, for sorting."
-        },
-        "participants": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "An array of User IDs that are in the chat."
-        },
-        "participantInfo": {
-            "type": "array",
-            "items": {
-                "$ref": "#/entities/ChatParticipant"
-            },
-            "description": "An array of objects containing participant info."
-        },
-        "chatName": {
-          "type": "string",
-          "description": "The name of the group or the other user."
-        }
-      },
-      "required": [
-        "lastMessage",
-        "timestamp",
-        "participants",
-        "participantInfo"
-      ]
-    },
-    "ChatParticipant": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "ChatParticipant",
-        "description": "Represents a participant in a chat.",
-        "type": "object",
-        "properties": {
-            "userId": {
-                "type": "string"
-            },
-            "name": {
-                "type": "string"
-            },
-            "avatar": {
-                "type": "string",
-                "format": "uri"
-            }
-        },
-        "required": ["userId", "name", "avatar"]
-    },
-    "Status": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Status",
-      "description": "Represents a single status post, which can be text or media.",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "userId": {
-          "type": "string",
-          "description": "ID of the user who posted the status."
-        },
-        "userName": {
-          "type": "string",
-          "description": "Denormalized name of the user for quick display."
-        },
-        "userAvatar": {
-          "type": "string",
-          "format": "uri",
-          "description": "Denormalized avatar URL of the user."
-        },
-        "type": {
-          "type": "string",
-          "enum": ["text", "media"],
-          "description": "The type of status content."
-        },
-        "content": {
-          "type": "string",
-          "description": "URL for media, or the text content itself."
-        },
-        "timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The time the status was posted."
-        },
-        "duration": {
-          "type": "number",
-          "description": "How long the status should be displayed, in seconds."
-        },
-        "viewers": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "An array of User IDs who have viewed the status."
-        }
-      },
-      "required": ["id", "userId", "userName", "userAvatar", "type", "content", "timestamp", "duration", "viewers"]
-    },
-    "Channel": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Channel",
-      "description": "Represents a broadcast channel for one-to-many communication.",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the channel."
-        },
-        "description": {
-          "type": "string",
-          "description": "A short description of the channel's purpose."
-        },
-        "ownerId": {
-          "type": "string",
-          "description": "The User ID of the channel's creator/owner."
-        },
-        "memberIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "An array of User IDs that are members of the channel."
-        }
-      },
-      "required": ["id", "name", "ownerId", "memberIds"]
-    },
-    "CallLog": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "CallLog",
-        "description": "Represents a single call event in the call history.",
-        "type": "object",
-        "properties": {
-            "id": {
-                "type": "string"
-            },
-            "participantIds": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                },
-                "description": "Array of user IDs involved in the call."
-            },
-            "participantInfo": {
-                "type": "array",
-                "items": {
-                    "$ref": "#/entities/ChatParticipant"
-                },
-                "description": "Denormalized info about participants for display."
-            },
-            "callType": {
-                "type": "string",
-                "enum": ["Video", "Voice"],
-                "description": "The type of call."
-            },
-            "direction": {
-                "type": "string",
-                "enum": ["Incoming", "Outgoing"],
-                "description": "The direction of the call relative to the current user."
-            },
-            "status": {
-                "type": "string",
-                "enum": ["Completed", "Missed", "Ongoing", "Ringing"],
-                "description": "The final status of the call."
-            },
-            "startTime": {
-                "type": "string",
-                "format": "date-time",
-                "description": "The timestamp when the call was initiated."
-            },
-            "durationSeconds": {
-                "type": "number",
-                "description": "The duration of the call in seconds."
-            }
-        },
-        "required": ["id", "participantIds", "participantInfo", "callType", "direction", "status", "startTime"]
     }
   },
   "auth": {
@@ -327,167 +39,22 @@
   },
   "firestore": {
     "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user account information. Uses path-based ownership for private user data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/user_profiles/{profileId}",
+       {
+        "path": "/user_profiles/{userId}",
         "definition": {
           "entityName": "UserProfile",
           "schema": {
-            "$ref": "#/backend/entities/UserProfile"
+            "$ref": "#/entities/UserProfile"
           },
-          "description": "Stores user profile information. profileId corresponds to the id of the user's profile.",
-          "params": [
-            {
-              "name": "profileId",
-              "description": "The unique identifier of the user profile."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/projects/{projectId}",
-        "definition": {
-          "entityName": "Project",
-          "schema": {
-            "$ref": "#/backend/entities/Project"
-          },
-          "description": "Stores project information. Each project is owned by a user, as indicated by the userId and stored in the project document.",
+          "description": "Stores user profile information. The document ID corresponds to the user's Firebase Auth UID.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user who owns the project."
-            },
-            {
-              "name": "projectId",
-              "description": "The unique identifier of the project."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/chats/{chatId}",
-        "definition": {
-          "entityName": "Chat",
-          "schema": {
-            "$ref": "#/entities/Chat"
-          },
-          "description": "Stores conversation details for group or direct messages.",
-          "params": [
-            {
-              "name": "chatId",
-              "description": "The unique identifier for the chat."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/chats/{chatId}/messages/{messageId}",
-        "definition": {
-          "entityName": "Message",
-          "schema": {
-            "$ref": "#/entities/Message"
-          },
-          "description": "Stores messages within a specific chat.",
-          "params": [
-            {
-              "name": "chatId",
-              "description": "The ID of the chat."
-            },
-            {
-              "name": "messageId",
-              "description": "The ID of the message."
-            }
-          ]
-        }
-      },
-       {
-        "path": "/statuses/{statusId}",
-        "definition": {
-          "entityName": "Status",
-          "schema": {
-            "$ref": "#/entities/Status"
-          },
-          "description": "Stores individual status posts, which expire after 24 hours.",
-          "params": [
-            {
-              "name": "statusId",
-              "description": "The unique identifier for the status post."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/channels/{channelId}",
-        "definition": {
-          "entityName": "Channel",
-          "schema": {
-            "$ref": "#/entities/Channel"
-          },
-          "description": "Stores metadata for each broadcast channel.",
-          "params": [
-            {
-              "name": "channelId",
-              "description": "The unique identifier for the channel."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/channels/{channelId}/messages/{messageId}",
-        "definition": {
-          "entityName": "Message",
-          "schema": {
-            "$ref": "#/entities/Message"
-          },
-          "description": "Stores all messages for a specific channel.",
-          "params": [
-            {
-              "name": "channelId",
-              "description": "The ID of the channel."
-            },
-            {
-              "name": "messageId",
-              "description": "The ID of the message."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/callLogs/{callLogId}",
-        "definition": {
-          "entityName": "CallLog",
-          "schema": {
-            "$ref": "#/entities/CallLog"
-          },
-          "description": "Stores a log of all voice and video calls for a specific user. This is a nested collection for security.",
-           "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns the call log."
-            },
-            {
-              "name": "callLogId",
-              "description": "The unique identifier for the call log entry."
+              "description": "The unique identifier of the user, matching their Firebase Auth UID."
             }
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability, following the specified design principles. It leverages path-based ownership for user-specific data and denormalization to avoid hierarchical authorization dependencies. \n\n*   **Users and UserProfiles:** User data and profiles are separated into distinct collections. Each user has a dedicated document in `/users/{userId}` and a corresponding profile in `/user_profiles/{profileId}`. The `User` document contains the `profileId` to establish the 1:1 relationship. This approach uses Structural Segregation, avoiding mixing data with different access requirements in the same collection.\n*   **Projects:** Each user can own multiple projects, structured using path-based ownership under `/users/{userId}/projects/{projectId}`. The `Project` entity includes a `userId` to reference the owning user, reinforcing ownership. This also avoids the need to query across collections to get project data.  Google Analytics setting resides within the `Project` document itself, adhering to predictability within the schema.\n*   **Chats:** A top-level `chats` collection is added to store conversation metadata for the main chat list. This allows for efficient querying of a user's conversations without needing to read all messages. Each document contains denormalized participant information for display purposes.\n*   **Messages:**  Messages are nested in a subcollection under the chat they belong to: `/chats/{chatId}/messages/{messageId}`. This is a standard and scalable pattern for chat applications. It allows for efficient querying of messages for a specific chat without loading all messages from all chats. Security rules can be applied at the `/chats/{chatId}` level to control access to the messages within.\n*   **Statuses:** A top-level `statuses` collection holds all status posts. This allows for efficient querying of all statuses created in the last 24 hours. Each document contains denormalized user information (`userName`, `userAvatar`) to avoid extra lookups when displaying the status list. The `viewers` array allows for real-time tracking of who has seen a status.\n*  **Channels**: A top-level `channels` collection stores metadata for each broadcast channel. This allows for efficient querying of all channels. Messages within a channel are stored in a nested subcollection `/channels/{channelId}/messages/{messageId}` for scalability and granular access control. \n*  **Call Logs**: Call logs are stored in a nested subcollection under the user who owns them (`/users/{userId}/callLogs/{callLogId}`). This provides a simple and secure way to enforce ownership via path-based security rules, ensuring users can only access their own call history.\n\nThis design enables Authorization Independence because all authorization is based on the current user's `uid` and the explicit `userId` stored within the documents. There are no `get()` calls needed to determine access, as the necessary context is either derived from the path or included in the document itself. The hierarchical structure, combined with denormalization, supports QAPs by enabling secure list operations at each level.  For example, listing messages within a project only requires checking the user's ownership of the parent project, not individual message permissions."
+    ]
   }
 }
