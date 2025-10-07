@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/firebase/auth/auth-provider';
@@ -217,7 +218,7 @@ export default function SettingsPage() {
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={loading}>
-              {loading ? 'Saving...' : 'Save Settings'}
+              {loading ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </CardContent>
