@@ -23,10 +23,9 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/icons";
-import { AuthProvider, useAuth } from "@/firebase/auth/auth-provider";
+import { useAuth } from "@/firebase/auth/auth-provider";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Loading } from "@/components/Loading";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
@@ -38,7 +37,7 @@ function ChatLayout() {
     string | null
   >(initialConversations[0]?.id || null);
 
-  const { user, loading } = useAuth();
+  const { user, auth, db, loading } = useAuth();
   const router = useRouter();
   const [localUser, setLocalUser] = React.useState<User | null>(null);
 
@@ -46,7 +45,7 @@ function ChatLayout() {
     if (!loading && !user) {
       router.push("/");
     }
-    if (user) {
+    if (user && db) {
       const fetchUserData = async () => {
         if (!db) {
           console.error("Firestore is not initialized");
@@ -66,7 +65,7 @@ function ChatLayout() {
       };
       fetchUserData();
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, db]);
 
 
   const activeConversation = conversations.find(
@@ -113,7 +112,9 @@ function ChatLayout() {
   };
 
   const handleSignOut = async () => {
-    await auth.signOut();
+    if(auth) {
+        await auth.signOut();
+    }
     router.push('/');
   }
 
@@ -198,10 +199,8 @@ function ChatLayout() {
 
 export default function ConnectNowChatPage() {
   return (
-    <AuthProvider>
       <SidebarProvider defaultOpen>
         <ChatLayout />
       </SidebarProvider>
-    </AuthProvider>
   );
 }

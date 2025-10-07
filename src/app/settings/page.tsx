@@ -1,7 +1,7 @@
 
 "use client";
 
-import { AuthProvider, useAuth } from "@/firebase/auth/auth-provider";
+import { useAuth } from "@/firebase/auth/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loading } from "@/components/Loading";
@@ -36,8 +36,6 @@ function ProtectedSettingsPage() {
 
 export default function SettingsPage() {
   return (
-    <AuthProvider>
       <ProtectedSettingsPage />
-    </AuthProvider>
   );
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,44 +10,39 @@ import {
 } from "@/components/ui/card";
 import {
   signInWithPopup,
-  onAuthStateChanged,
 } from "firebase/auth";
-import { auth, provider as googleProvider, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Loading } from "@/components/Loading";
 import Image from 'next/image';
+import { useAuth } from "@/firebase/auth/auth-provider";
+import { GoogleAuthProvider } from "firebase/auth";
 
 export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-
+  const { user, auth, db, loading: authLoading } = useAuth();
+  
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.push("/chat");
-      } else {
-        setAuthLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (!authLoading && user) {
+      router.push("/chat");
+    }
+  }, [user, authLoading, router]);
 
   const handleSignIn = async () => {
+    if (!auth || !db) return;
     setLoading(true);
+    const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if user already exists in Firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // Create user document in Firestore if it doesn't exist
         await setDoc(userDocRef, {
           name: user.displayName || user.email?.split('@')[0] || 'New User',
           email: user.email,
@@ -68,7 +62,7 @@ export default function AuthPage() {
     }
   };
   
-  if (authLoading) {
+  if (authLoading || user) {
     return <Loading />;
   }
 

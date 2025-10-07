@@ -2,11 +2,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useAuth, AuthProvider } from "@/firebase/auth/auth-provider";
+import { useAuth } from "@/firebase/auth/auth-provider";
 import { useRouter } from "next/navigation";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage, auth } from "@/lib/firebase";
 import { updateProfile } from "firebase/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ import { Camera } from "lucide-react";
 import { Loading } from "@/components/Loading";
 
 function ProfilePageContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, auth, db, storage, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [displayName, setDisplayName] = useState("");
@@ -31,14 +30,9 @@ function ProfilePageContent() {
     if (!authLoading && !user) {
       router.push("/");
     }
-    if (user) {
+    if (user && db) {
       const fetchUserData = async () => {
         try {
-          if (!db) {
-            console.error("Firestore is not initialized");
-            setInitialLoading(false);
-            return;
-          }
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
@@ -55,21 +49,15 @@ function ProfilePageContent() {
         }
       };
       fetchUserData();
+    } else if (!authLoading) {
+      setInitialLoading(false);
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, db]);
 
   const handlePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user || !e.target.files || e.target.files.length === 0) return;
+    if (!user || !e.target.files || e.target.files.length === 0 || !storage || !db) return;
 
     const file = e.target.files[0];
-    if (!storage) {
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: "Firebase Storage is not configured.",
-      });
-      return;
-    }
     const storageRef = ref(storage, `profile-pictures/${user.uid}`);
     
     setUploading(true);
@@ -78,14 +66,12 @@ function ProfilePageContent() {
       await uploadBytes(storageRef, file);
       const newPhotoURL = await getDownloadURL(storageRef);
       
-      if(auth.currentUser) {
+      if(auth?.currentUser) {
         await updateProfile(auth.currentUser, { photoURL: newPhotoURL });
       }
       
-      if (db) {
-        const userDocRef = doc(db, "users", user.uid);
-        await setDoc(userDocRef, { avatar: newPhotoURL }, { merge: true });
-      }
+      const userDocRef = doc(db, "users", user.uid);
+      await setDoc(userDocRef, { avatar: newPhotoURL }, { merge: true });
 
       setPhotoURL(newPhotoURL);
       toast({ title: "Profile picture updated!" });
@@ -102,17 +88,15 @@ function ProfilePageContent() {
   
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !db || !auth) return;
     
     try {
       if(auth.currentUser){
         await updateProfile(auth.currentUser, { displayName: displayName });
       }
 
-      if (db) {
-        const userDocRef = doc(db, "users", user.uid);
-        await setDoc(userDocRef, { name: displayName }, { merge: true });
-      }
+      const userDocRef = doc(db, "users", user.uid);
+      await setDoc(userDocRef, { name: displayName }, { merge: true });
 
       toast({ title: "Profile updated successfully!" });
       router.push('/chat');
@@ -198,8 +182,6 @@ function ProfilePageContent() {
 
 export default function ProfilePage() {
     return (
-        <AuthProvider>
-            <ProfilePageContent />
-        </AuthProvider>
+        <ProfilePageContent />
     )
 }
