@@ -2,8 +2,6 @@
 
 import { Camera, Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChatList } from './ChatList';
 import { UserNav } from './layout/user-nav';
 
 export function UserDashboard() {
@@ -19,14 +17,7 @@ export function UserDashboard() {
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        <Tabs defaultValue="chats" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 rounded-none bg-primary text-primary-foreground">
-            <TabsTrigger value="chats" className="data-[state=active]:border-b-2 data-[state=active]:border-primary-foreground rounded-none">Chats</TabsTrigger>
-          </TabsList>
-          <TabsContent value="chats">
-            <ChatList />
-          </TabsContent>
-        </Tabs>
+        {/* Chat list has been removed */}
       </main>
 
        <Button className="absolute bottom-8 right-4 h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 shadow-lg">
