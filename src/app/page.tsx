@@ -22,6 +22,7 @@ import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc } from "firebase/firestore";
+import { Loading } from "@/components/Loading";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -29,11 +30,14 @@ export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         router.push("/chat");
+      } else {
+        setAuthLoading(false);
       }
     });
     return () => unsubscribe();
@@ -80,6 +84,10 @@ export default function AuthPage() {
         setLoading(false);
     }
   };
+  
+  if (authLoading) {
+    return <Loading />;
+  }
 
 
   return (
