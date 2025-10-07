@@ -20,29 +20,11 @@ export function UserDashboard() {
 
       <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="chats" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 rounded-none bg-primary text-primary-foreground">
+          <TabsList className="grid w-full grid-cols-1 rounded-none bg-primary text-primary-foreground">
             <TabsTrigger value="chats" className="data-[state=active]:border-b-2 data-[state=active]:border-primary-foreground rounded-none">Chats</TabsTrigger>
-            <TabsTrigger value="status" className="data-[state=active]:border-b-2 data-[state=active]:border-primary-foreground rounded-none">Status</TabsTrigger>
-            <TabsTrigger value="channels" className="data-[state=active]:border-b-2 data-[state=active]:border-primary-foreground rounded-none">Channels</TabsTrigger>
-            <TabsTrigger value="calls" className="data-[state=active]:border-b-2 data-[state=active]:border-primary-foreground rounded-none">Calls</TabsTrigger>
           </TabsList>
           <TabsContent value="chats">
             <ChatList />
-          </TabsContent>
-          <TabsContent value="status">
-            <div className="flex items-center justify-center h-full">
-                <p>Status updates will appear here.</p>
-            </div>
-          </TabsContent>
-          <TabsContent value="channels">
-            <div className="flex items-center justify-center h-full">
-                <p>Channels will appear here.</p>
-            </div>
-          </TabsContent>
-          <TabsContent value="calls">
-            <div className="flex items-center justify-center h-full">
-                <p>Call history will appear here.</p>
-            </div>
           </TabsContent>
         </Tabs>
       </main>
