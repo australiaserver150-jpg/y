@@ -3,7 +3,7 @@
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import GoogleLoginButton from '@/components/google-login-button';
-import { AuthForm } from '@/components/auth-form';
+import { EmailAuthForm } from '@/components/EmailAuthForm';
 import { UserDashboard } from '@/components/user-dashboard';
 
 export default function MainPage() {
@@ -41,7 +41,7 @@ export default function MainPage() {
                 </span>
               </div>
             </div>
-            <AuthForm />
+            <EmailAuthForm />
           </div>
         </CardContent>
       </Card>

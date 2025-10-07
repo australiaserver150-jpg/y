@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export function AuthForm() {
+export function EmailAuthForm() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
