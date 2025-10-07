@@ -27,7 +27,7 @@ function CallLogItem({ log, currentUserId }: { log: CallLog, currentUserId: stri
     const isMissed = log.status === 'Missed';
     const isOutgoing = log.direction === 'Outgoing';
     
-    const callTime = format(log.startTime.toDate(), 'p');
+    const callTime = log.startTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const callDate = formatDistanceToNowStrict(log.startTime.toDate(), { addSuffix: true });
     
     const statusColor = isMissed ? 'text-red-500' : 'text-muted-foreground';
@@ -66,8 +66,7 @@ export default function CallsPage() {
     const callLogsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
-            collection(firestore, "callLogs"),
-            where("participantIds", "array-contains", user.uid),
+            collection(firestore, "users", user.uid, "callLogs"),
             orderBy("startTime", "desc")
         );
     }, [firestore, user]);
