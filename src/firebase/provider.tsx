@@ -1,51 +1,51 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
-import firebaseConfig from './config';
-import { Loading } from '@/components/Loading';
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import firebaseConfig from "./config";
+import { initializeApp, FirebaseApp, getApps, getApp } from "firebase/app";
+import { getAuth, Auth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
+import { Loading } from "@/components/Loading";
 
-interface FirebaseContextValue {
-    app: FirebaseApp;
-    auth: Auth;
-    db: Firestore;
-    storage: FirebaseStorage;
-    provider: GoogleAuthProvider;
+interface FirebaseContextProps {
+  app: FirebaseApp;
+  auth: Auth;
+  db: Firestore;
+  storage: FirebaseStorage;
+  provider: GoogleAuthProvider;
 }
 
-const FirebaseContext = createContext<FirebaseContextValue | null>(null);
+const FirebaseContext = createContext<FirebaseContextProps | null>(null);
 
-export const FirebaseProvider = ({ children }: { children: React.ReactNode }) => {
-    const [firebase, setFirebase] = useState<FirebaseContextValue | null>(null);
+export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
+  const [firebaseState, setFirebaseState] = useState<FirebaseContextProps | null>(null);
 
-    useEffect(() => {
-        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-        const provider = new GoogleAuthProvider();
-        setFirebase({ app, auth, db, storage, provider });
-    }, []);
+  useEffect(() => {
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const provider = new GoogleAuthProvider();
+    setFirebaseState({ app, auth, db, storage, provider });
+  }, []);
 
-    if (!firebase) {
-        return <Loading />;
-    }
+  if (!firebaseState) {
+    return <Loading />;
+  }
 
-    return (
-        <FirebaseContext.Provider value={firebase}>
-            {children}
-        </FirebaseContext.Provider>
-    );
+  return (
+    <FirebaseContext.Provider value={firebaseState}>
+      {children}
+    </FirebaseContext.Provider>
+  );
 };
 
 export const useFirebase = () => {
     const context = useContext(FirebaseContext);
     if (context === null) {
-        throw new Error('useFirebase must be used within a FirebaseProvider');
+        throw new Error("useFirebase must be used within a FirebaseProvider");
     }
     return context;
 };
