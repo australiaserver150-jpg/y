@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { db, auth } from "@/firebase/client";
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { signInWithPopup, GoogleAuthProvider, useAuthState } from "react-firebase-hooks/auth";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { Loading } from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
