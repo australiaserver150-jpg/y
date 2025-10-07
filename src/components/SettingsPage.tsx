@@ -13,6 +13,8 @@ import { useRef, useState, useEffect } from 'react';
 import { Switch } from './ui/switch';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useTheme } from '@/context/ThemeContext';
+import { Moon, Sun } from 'lucide-react';
 
 export function SettingsPage() {
   const { user } = useUser();
@@ -21,6 +23,7 @@ export function SettingsPage() {
   const storage = useStorage();
   const router = useRouter();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   const [profile, setProfile] = useState<{displayName?: string; username?: string; profilePicture?: string, onlineStatus?: boolean;}>({});
   const [newDisplayName, setNewDisplayName] = useState('');
@@ -161,6 +164,26 @@ export function SettingsPage() {
             </div>
              <Button variant="outline" onClick={handleNameChange}>Save Changes</Button>
           </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+            <CardHeader>
+                <CardTitle>Appearance</CardTitle>
+                <CardDescription>Customize the look and feel of the app.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="theme" className="flex items-center gap-2">
+                        {theme === 'dark' ? <Moon /> : <Sun />}
+                        Dark Mode
+                    </Label>
+                    <Switch
+                        id="theme"
+                        checked={theme === 'dark'}
+                        onCheckedChange={toggleTheme}
+                    />
+                </div>
+            </CardContent>
         </Card>
 
         <Card className="mt-6">
