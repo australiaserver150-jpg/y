@@ -1,6 +1,6 @@
 "use client";
 
-import { useFirebase } from "../firebase/provider";
+import { auth, db } from "../firebase/client";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -18,11 +18,10 @@ import { Loading } from "@/components/Loading";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
-  const { auth, db } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   
-  const [user, loading] = useAuthState(auth!);
+  const [user, loading] = useAuthState(auth);
 
   useEffect(() => {
     if (!loading && user) {

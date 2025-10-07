@@ -29,17 +29,16 @@ import { doc, getDoc } from "firebase/firestore";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Loading } from "@/components/Loading";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
-import { useFirebase } from "@/firebase/provider";
+import { auth, db } from "@/firebase/client";
 
 function ChatLayout() {
-  const { auth, db } = useFirebase();
   const [conversations, setConversations] =
     React.useState<Conversation[]>(initialConversations);
   const [activeConversationId, setActiveConversationId] = React.useState<
     string | null
   >(initialConversations[0]?.id || null);
 
-  const [user, loading] = useAuthState(auth!);
+  const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const [localUser, setLocalUser] = React.useState<User | null>(null);
 
@@ -114,9 +113,7 @@ function ChatLayout() {
   };
 
   const handleSignOut = async () => {
-    if(auth) {
-        await auth.signOut();
-    }
+    await auth.signOut();
     router.push('/');
   }
 

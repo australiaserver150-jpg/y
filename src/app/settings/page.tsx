@@ -5,7 +5,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loading } from "@/components/Loading";
-import { useFirebase } from "@/firebase/provider";
+import { auth } from "@/firebase/client";
 
 function SettingsPageContent() {
   return (
@@ -19,8 +19,7 @@ function SettingsPageContent() {
 }
 
 function ProtectedSettingsPage() {
-  const { auth } = useFirebase();
-  const [user, loading] = useAuthState(auth!);
+  const [user, loading] = useAuthState(auth);
   const router = useRouter();
 
   useEffect(() => {

@@ -15,11 +15,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Camera } from "lucide-react";
 import { Loading } from "@/components/Loading";
-import { useFirebase } from "@/firebase/provider";
+import { auth, db, storage } from "@/firebase/client";
 
 function ProfilePageContent() {
-  const { auth, db, storage } = useFirebase();
-  const [user, authLoading] = useAuthState(auth!);
+  const [user, authLoading] = useAuthState(auth);
   const router = useRouter();
   const { toast } = useToast();
   const [displayName, setDisplayName] = useState("");
