@@ -22,13 +22,13 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/icons";
-import { useFirebase } from "@/firebase/provider";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Loading } from "@/components/Loading";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
+import { auth, db } from "@/lib/firebase";
 
 function ChatLayout() {
   const [conversations, setConversations] =
@@ -37,7 +37,6 @@ function ChatLayout() {
     string | null
   >(initialConversations[0]?.id || null);
 
-  const { auth, db } = useFirebase();
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const [localUser, setLocalUser] = React.useState<User | null>(null);

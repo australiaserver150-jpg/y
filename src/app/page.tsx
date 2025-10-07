@@ -15,13 +15,12 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Loading } from "@/components/Loading";
-import { useFirebase } from "@/firebase/provider";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { auth, db, provider } from "@/lib/firebase";
 
 export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { auth, db, provider } = useFirebase();
   const [user, authLoading] = useAuthState(auth);
   const [loading, setLoading] = useState(false);
   

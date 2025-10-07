@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useFirebase } from "@/firebase/provider";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { doc, setDoc, getDoc } from "firebase/firestore";
@@ -15,9 +14,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Camera } from "lucide-react";
 import { Loading } from "@/components/Loading";
+import { auth, db, storage } from "@/lib/firebase";
 
 function ProfilePageContent() {
-  const { auth, db, storage } = useFirebase();
   const [user, authLoading] = useAuthState(auth);
   const router = useRouter();
   const { toast } = useToast();
