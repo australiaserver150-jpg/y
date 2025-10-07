@@ -22,13 +22,92 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
+        },
+        "friends": {
+          "type": "array",
+          "description": "An array of user IDs that are friends with this user.",
+          "items": {
+            "type": "string"
+          }
         }
       },
-      "required": ["name", "username", "email"]
+      "required": [
+        "name",
+        "username",
+        "email"
+      ]
+    },
+    "FriendRequest": {
+      "title": "Friend Request",
+      "description": "Represents a friend request between two users.",
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "The user ID of the person sending the request."
+        },
+        "to": {
+          "type": "string",
+          "description": "The user ID of the person receiving the request."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "accepted"
+          ],
+          "description": "The current status of the friend request."
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "status"
+      ]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "Represents a single message within a chat.",
+      "type": "object",
+      "properties": {
+        "senderId": {
+          "type": "string",
+          "description": "The user ID of the message sender."
+        },
+        "text": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the message was sent."
+        }
+      },
+      "required": [
+        "senderId",
+        "text",
+        "timestamp"
+      ]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "Represents a conversation between users, containing messages.",
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/ChatMessage"
+          }
+        }
+      }
     }
   },
   "auth": {
-    "providers": ["google.com"]
+    "providers": [
+      "google.com"
+    ]
   },
   "firestore": {
     "/user_profiles/{userId}": {
@@ -36,6 +115,18 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Stores public profile information for each user, ensuring a unique username."
+    },
+    "/friendRequests/{requestId}": {
+      "schema": {
+        "$ref": "#/entities/FriendRequest"
+      },
+      "description": "Stores all friend requests sent between users."
+    },
+    "/chats/{chatId}": {
+      "schema": {
+        "$ref": "#/entities/Chat"
+      },
+      "description": "Stores chat conversations and their messages."
     }
   }
 }
