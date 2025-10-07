@@ -22,6 +22,13 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
+        },
+        "friends": {
+          "type": "array",
+          "description": "An array of user IDs that are friends with this user.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -85,7 +92,7 @@
     },
     "Chat": {
       "title": "Chat",
-      "description": "Represents a conversation between users, containing messages.",
+      "description": "Represents a conversation between users.",
       "type": "object",
       "properties": {
         "participants": {
@@ -93,12 +100,6 @@
           "description": "An array of user IDs participating in the chat.",
           "items": {
             "type": "string"
-          }
-        },
-        "messages": {
-          "type": "array",
-          "items": {
-            "$ref": "#/entities/ChatMessage"
           }
         }
       }
@@ -127,6 +128,44 @@
         "text",
         "timestamp"
       ]
+    },
+    "Call": {
+      "title": "Call",
+      "description": "Represents a call between users, containing signaling information.",
+      "type": "object",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "description": "An array of user IDs participating in the call.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "offer": {
+          "type": "object",
+          "description": "The WebRTC session description offer from the caller."
+        },
+        "answer": {
+          "type": "object",
+          "description": "The WebRTC session description answer from the callee."
+        }
+      }
+    },
+    "WebRTCCandidate": {
+      "title": "WebRTC Candidate",
+      "description": "Represents a WebRTC ICE candidate for establishing a connection.",
+      "type": "object",
+      "properties": {
+        "candidate": {
+          "type": "string"
+        },
+        "sdpMid": {
+          "type": "string"
+        },
+        "sdpMLineIndex": {
+          "type": "number"
+        }
+      }
     }
   },
   "auth": {
@@ -151,13 +190,31 @@
       "schema": {
         "$ref": "#/entities/Chat"
       },
-      "description": "Stores chat conversations and their messages."
+      "description": "Stores chat conversations and their participant information."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/ChatMessage"
+      },
+      "description": "A subcollection for messages within a specific chat."
     },
     "/statuses/{statusId}": {
-        "schema": {
-            "$ref": "#/entities/Status"
-        },
-        "description": "Stores user status updates."
+      "schema": {
+        "$ref": "#/entities/Status"
+      },
+      "description": "Stores user status updates."
+    },
+    "/calls/{callId}": {
+      "schema": {
+        "$ref": "#/entities/Call"
+      },
+      "description": "Stores WebRTC signaling information for calls."
+    },
+    "/calls/{callId}/candidates/{candidateId}": {
+      "schema": {
+        "$ref": "#/entities/WebRTCCandidate"
+      },
+      "description": "Stores ICE candidates for a specific call."
     }
   }
 }

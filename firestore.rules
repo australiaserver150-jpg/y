@@ -1,93 +1,138 @@
-/**
- * @fileoverview Firestore Security Rules for the application.
- *
- * Core Philosophy:
- * This ruleset enforces a user-centric security model. Each user has full access to their own profile data.
- * Chats are only accessible to logged-in users.
- *
- * Data Structure:
- * - `/user_profiles/{userId}`: Stores public user profile information, accessible only by the user themselves.
- * - `/friendRequests/{requestId}`: Stores friend requests, accessible only by authenticated users.
- * - `/chats/{chatId}`: Stores chat conversations, accessible only by authenticated users.
- *
- * Key Security Decisions:
- * - User listing is implicitly denied (no top-level `/users` collection with `list` enabled).
- * - Data shape validation is relaxed to allow for rapid prototyping. Only authorization-critical fields are validated.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Protects user profiles, ensuring only the owner can read and write.
-     * @path /user_profiles/{userId}
-     * @allow (read, write) if request.auth.uid == userId
-     * @deny (read, write) if request.auth.uid != userId
-     * @principle Enforces document ownership for all operations.
+     * @description Controls access to user profile documents.
+     * @path /users/{userId}
+     * @allow (read) Authenticated user can read any profile for search.
+     * @allow (create, update, delete) Authenticated user can only write their own profile data.
+     * @deny (create, update, delete) Authenticated user cannot write another user's profile data.
+     * @principle Enforces document ownership for writes; allows public reads for authenticated users.
      */
-    match /user_profiles/{userId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
-
-    /**
-     * @description Protects friend requests, ensuring only authenticated users can manage them.
-     * @path /friendRequests/{requestId}
-     * @allow (read, write) if request.auth != null
-     * @deny (read, write) if request.auth == null
-     * @principle Requires authentication for all operations.
-     */
-    match /friendRequests/{requestId} {
+    match /users/{userId} {
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * @description Protects chat conversations, ensuring only authenticated users can participate.
+     * @description Controls access to chat documents and subcollections.
      * @path /chats/{chatId}
-     * @allow (read, write) if request.auth != null
-     * @deny (read, write) if request.auth == null
-     * @principle Requires authentication for all operations.
+     * @allow (read, write) Only chat participants can read and write chat documents.
+     * @deny (read, write) Users who are not participants cannot access the chat.
+     * @principle Enforces shared access based on the `participants` array.
      */
     match /chats/{chatId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow get: if isSignedIn() && isParticipant(resource.data.participants);
+      allow list: if false;
+      allow create: if isSignedIn() && request.resource.data.participants is list && isParticipant(request.resource.data.participants);
+      allow update: if isSignedIn() && isParticipant(resource.data.participants);
+      allow delete: if isSignedIn() && isParticipant(resource.data.participants);
+
+      /**
+       * @description Controls access to messages within a chat.
+       * @path /chats/{chatId}/messages/{messageId}
+       * @allow (read, write) Only chat participants can read and write messages.
+       * @deny (read, write) Users who are not participants cannot access messages.
+       * @principle Enforces shared access based on the parent chat's `participants` array.
+       */
+      match /chats/{chatId}/messages/{messageId} {
+        allow get: if isSignedIn() && isParticipantInParentChat(chatId);
+        allow list: if false;
+        allow create: if isSignedIn() && isParticipantInParentChat(chatId);
+        allow update: if isSignedIn() && isParticipantInParentChat(chatId);
+        allow delete: if isSignedIn() && isParticipantInParentChat(chatId);
+      }
     }
 
     /**
-     * @description Fallback rule: deny all access to paths not explicitly defined.
-     * @path /
-     * @deny (read, write) always
-     * @principle Provides a default-deny policy for undefined paths.
+     * @description Controls access to call signaling documents and subcollections.
+     * @path /calls/{callId}
+     * @allow (read, write) Only call participants can read and write call documents.
+     * @deny (read, write) Users who are not participants cannot access the call.
      */
-    match /{path=**} {
-      allow get: if false;
-      allow list: if false;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+    match /calls/{callId} {
+        allow get: if isSignedIn() && isCallParticipant(resource.data.participants);
+        allow list: if false;
+        allow create: if isSignedIn() && request.resource.data.participants is list && isCallParticipant(request.resource.data.participants);
+        allow update: if isSignedIn() && isCallParticipant(resource.data.participants);
+        allow delete: if isSignedIn() && isCallParticipant(resource.data.participants);
+
+      /**
+       * @description Controls access to call signaling candidates within a call.
+       * @path /calls/{callId}/candidates/{candId}
+       * @allow (read, write) Only call participants can read and write candidates.
+       * @deny (read, write) Users who are not participants cannot access candidates.
+       */
+      match /calls/{callId}/candidates/{candId} {
+        allow get: if isSignedIn() && isCallParticipantInParentCall(callId);
+        allow list: if false;
+        allow create: if isSignedIn() && isCallParticipantInParentCall(callId);
+        allow update: if isSignedIn() && isCallParticipantInParentCall(callId);
+        allow delete: if isSignedIn() && isCallParticipantInParentCall(callId);
+      }
+    }
+    /**
+     * @description Controls access to friend request documents.
+     * @path /friendRequests/{requestId}
+     * @allow (create) Any authenticated user can create a friend request.
+     */
+    match /friendRequests/{requestId} {
+        allow get: if false;
+        allow list: if false;
+        allow create: if isSignedIn();
+        allow update: if false;
+        allow delete: if false;
     }
   }
 
-  // Helper Functions
+  // Helper functions
+
+  // Checks if the user is signed in.
   function isSignedIn() {
     return request.auth != null;
   }
 
+  // Checks if the user is the owner of the document based on the userId.
   function isOwner(userId) {
     return request.auth.uid == userId;
   }
 
+  // Checks if the user is the owner of an existing document.
   function isExistingOwner(userId) {
-    return isSignedIn() && isOwner(userId) && resource != null;
+    return isOwner(userId) && resource != null;
+  }
+
+    // Check if the incoming new user document is valid.
+  function isValidNewUser(userId) {
+    return request.resource.data.id == userId;
+  }
+
+  // Checks if the userId field is immutable on update.
+  function isImmutableUserId(userId) {
+    return request.resource.data.id == resource.data.id;
+  }
+
+  // Checks if the user is a participant in the chat.
+  function isParticipant(participants) {
+    return participants is list && request.auth.uid in participants;
+  }
+
+  // Checks if the user is a participant in the parent chat (using a get() call).
+  function isParticipantInParentChat(chatId) {
+    return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+  }
+
+  // Checks if the user is a participant in the call.
+   function isCallParticipant(participants) {
+    return participants is list && request.auth.uid in participants;
+  }
+
+  // Checks if the user is a participant in the parent call (using a get() call).
+  function isCallParticipantInParentCall(callId) {
+    return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/calls/$(callId)).data.participants;
   }
 }
