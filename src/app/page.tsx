@@ -1,10 +1,13 @@
+
 "use client";
 
 import * as React from "react";
 import {
   ChevronsLeft,
   ChevronsRight,
+  LogOut,
   Search,
+  Settings,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -15,6 +18,7 @@ import {
   SidebarMenu,
   SidebarInset,
   useSidebar,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { conversations as initialConversations, currentUser } from "@/lib/data";
 import type { Conversation, Message, User } from "@/lib/types";
@@ -24,6 +28,10 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/icons";
+import { AuthProvider, useAuth } from "@/firebase/auth/auth-provider";
+import { useRouter } from "next/navigation";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 function ChatLayout() {
   const [conversations, setConversations] =
@@ -32,16 +40,44 @@ function ChatLayout() {
     string | null
   >(initialConversations[0]?.id || null);
 
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [localUser, setLocalUser] = React.useState<User | null>(null);
+
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push("/auth");
+    }
+    if (user) {
+      const fetchUserData = async () => {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setLocalUser({ id: user.uid, ...userDoc.data() } as User);
+        } else {
+          // If user doc doesn't exist, use basic info from auth
+          setLocalUser({
+            id: user.uid,
+            name: user.displayName || user.email || "User",
+            avatar: user.photoURL || PlaceHolderImages[0]?.imageUrl || '',
+            status: 'online',
+          });
+        }
+      };
+      fetchUserData();
+    }
+  }, [user, loading, router]);
+
+
   const activeConversation = conversations.find(
     (c) => c.id === activeConversationId
   );
   
   const handleSendMessage = (messageText: string) => {
-    if (!activeConversation) return;
+    if (!activeConversation || !localUser) return;
 
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
-      sender: currentUser,
+      sender: localUser,
       text: messageText,
       timestamp: new Date(),
     };
@@ -56,7 +92,7 @@ function ChatLayout() {
     setConversations(updatedConversations);
     
     // Simulate a reply from the other user
-    const otherUser = activeConversation.participants.find(p => p.id !== currentUser.id);
+    const otherUser = activeConversation.participants.find(p => p.id !== localUser.id);
     if(otherUser) {
         setTimeout(() => {
             const replyMessage: Message = {
@@ -76,7 +112,16 @@ function ChatLayout() {
     }
   };
 
+  const handleSignOut = async () => {
+    await auth.signOut();
+    router.push('/auth');
+  }
+
   const { isMobile } = useSidebar();
+  
+  if (loading || !user || !localUser) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="h-screen flex flex-col">
@@ -92,26 +137,39 @@ function ChatLayout() {
 
         <SidebarContent className="p-0">
           <div className="p-2 space-y-4">
-            <UserProfile user={currentUser} />
+            <UserProfile user={localUser} />
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search..." className="pl-8" />
             </div>
           </div>
           <ContactList
-            conversations={conversations}
+            conversations={conversations.map(c => ({...c, participants: [localUser, c.participants[1]]}))}
             activeConversationId={activeConversationId}
             onContactSelect={setActiveConversationId}
+            currentUser={localUser}
           />
         </SidebarContent>
+        <SidebarFooter>
+          <div className="p-2 space-y-1">
+             <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => router.push('/profile')}>
+              <Settings className="size-4" />
+              <span className="group-data-[collapsible=icon]:hidden">Profile Settings</span>
+            </Button>
+            <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleSignOut}>
+              <LogOut className="size-4" />
+              <span className="group-data-[collapsible=icon]:hidden">Logout</span>
+            </Button>
+          </div>
+        </SidebarFooter>
       </Sidebar>
 
       <SidebarInset className="flex flex-col">
         {activeConversation ? (
           <ChatWindow
             key={activeConversation.id}
-            conversation={activeConversation}
-            currentUser={currentUser}
+            conversation={{...activeConversation, participants: [localUser, activeConversation.participants[1]]}}
+            currentUser={localUser}
             onSendMessage={handleSendMessage}
           />
         ) : (
@@ -132,8 +190,10 @@ function ChatLayout() {
 
 export default function ConnectNowPage() {
   return (
-    <SidebarProvider defaultOpen>
-      <ChatLayout />
-    </SidebarProvider>
+    <AuthProvider>
+      <SidebarProvider defaultOpen>
+        <ChatLayout />
+      </SidebarProvider>
+    </AuthProvider>
   );
 }

@@ -1,7 +1,8 @@
+
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { Conversation } from "@/lib/types";
+import type { Conversation, User } from "@/lib/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ interface ContactListProps {
   conversations: Conversation[];
   activeConversationId: string | null;
   onContactSelect: (id: string) => void;
+  currentUser: User;
 }
 
 function ConversationItem({
@@ -20,23 +22,30 @@ function ConversationItem({
   activeConversationId,
   onContactSelect,
   isCollapsed,
+  currentUser,
 }: {
   convo: Conversation;
   activeConversationId: string | null;
   onContactSelect: (id: string) => void;
   isCollapsed: boolean;
+  currentUser: User;
 }) {
   const [formattedTimestamp, setFormattedTimestamp] = useState("");
-  const otherUser = convo.participants[1];
+  const otherUser = convo.participants.find(p => p.id !== currentUser.id);
   const lastMessage = convo.messages[convo.messages.length - 1];
 
   useEffect(() => {
     if (lastMessage) {
-      setFormattedTimestamp(
+      const updateTimestamp = () => setFormattedTimestamp(
         formatDistanceToNow(lastMessage.timestamp, { addSuffix: true })
       );
+      updateTimestamp();
+      const interval = setInterval(updateTimestamp, 60000);
+      return () => clearInterval(interval);
     }
   }, [lastMessage]);
+
+  if(!otherUser) return null;
 
   return (
     <button
@@ -65,6 +74,7 @@ function ConversationItem({
           </div>
           <div className="flex justify-between items-center">
             <p className="text-sm text-muted-foreground truncate">
+              {lastMessage?.sender.id === currentUser.id && 'You: '}
               {lastMessage?.text}
             </p>
             {/* Placeholder for unread count */}
@@ -80,6 +90,7 @@ export function ContactList({
   conversations,
   activeConversationId,
   onContactSelect,
+  currentUser
 }: ContactListProps) {
 
   const { state: sidebarState } = useSidebar();
@@ -95,6 +106,7 @@ export function ContactList({
             activeConversationId={activeConversationId}
             onContactSelect={onContactSelect}
             isCollapsed={isCollapsed}
+            currentUser={currentUser}
           />
         ))}
       </div>

@@ -1,3 +1,4 @@
+
 import type { User, Conversation } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -9,7 +10,6 @@ export const currentUser: User = {
 };
 
 const users: User[] = [
-  currentUser,
   {
     id: 'user-2',
     name: 'Alice',
@@ -39,11 +39,11 @@ const users: User[] = [
 export const conversations: Conversation[] = [
   {
     id: 'convo-1',
-    participants: [currentUser, users[1]],
+    participants: [currentUser, users[0]],
     messages: [
       {
         id: 'msg-1',
-        sender: users[1],
+        sender: users[0],
         text: 'Hey! How are you doing?',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
       },
@@ -55,7 +55,7 @@ export const conversations: Conversation[] = [
       },
       {
         id: 'msg-3',
-        sender: users[1],
+        sender: users[0],
         text: "I'm good too. Just finished a big project. Are you free this weekend?",
         timestamp: new Date(Date.now() - 1000 * 60 * 30),
       },
@@ -63,11 +63,11 @@ export const conversations: Conversation[] = [
   },
   {
     id: 'convo-2',
-    participants: [currentUser, users[2]],
+    participants: [currentUser, users[1]],
     messages: [
       {
         id: 'msg-4',
-        sender: users[2],
+        sender: users[1],
         text: 'Did you get the files I sent yesterday?',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
       },
@@ -81,7 +81,7 @@ export const conversations: Conversation[] = [
   },
   {
     id: 'convo-3',
-    participants: [currentUser, users[3]],
+    participants: [currentUser, users[2]],
     messages: [
       {
         id: 'msg-6',
@@ -93,11 +93,11 @@ export const conversations: Conversation[] = [
   },
    {
     id: 'convo-4',
-    participants: [currentUser, users[4]],
+    participants: [currentUser, users[3]],
     messages: [
       {
         id: 'msg-7',
-        sender: users[4],
+        sender: users[3],
         text: 'Happy Birthday! 🎉',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
       },
