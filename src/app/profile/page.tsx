@@ -2,11 +2,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/firebase/auth/auth-provider";
+import { useAuth, AuthProvider } from "@/firebase/auth/auth-provider";
 import { useRouter } from "next/navigation";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db, storage, auth } from "@/lib/firebase";
 import { updateProfile } from "firebase/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Camera } from "lucide-react";
 import { Loading } from "@/components/Loading";
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -177,4 +177,12 @@ export default function ProfilePage() {
       </Card>
     </div>
   );
+}
+
+export default function ProfilePage() {
+    return (
+        <AuthProvider>
+            <ProfilePageContent />
+        </AuthProvider>
+    )
 }

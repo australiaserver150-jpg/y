@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/firebase/auth/auth-provider';
+import { useAuth, AuthProvider } from '@/firebase/auth/auth-provider';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loading } from '@/components/Loading';
 import { Camera } from 'lucide-react';
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -38,6 +38,9 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!authLoading && !user) {
+        router.push('/');
+    }
     if (user) {
       const userDocRef = doc(db, 'users', user.uid);
       getDoc(userDocRef).then(docSnap => {
@@ -56,8 +59,6 @@ export default function SettingsPage() {
         }
         setInitialLoading(false);
       });
-    } else if (!authLoading) {
-      router.push('/');
     }
   }, [user, authLoading, router]);
 
@@ -225,4 +226,12 @@ export default function SettingsPage() {
       </Card>
     </div>
   );
+}
+
+export default function SettingsPage() {
+    return (
+        <AuthProvider>
+            <SettingsPageContent />
+        </AuthProvider>
+    )
 }
