@@ -56,3 +56,14 @@ export type Channel = {
     ownerId: string;
     memberIds: string[];
 };
+
+export type CallLog = {
+    id: string;
+    participantIds: string[];
+    participantInfo: ChatParticipant[];
+    callType: 'Video' | 'Voice';
+    direction: 'Incoming' | 'Outgoing';
+    status: 'Completed' | 'Missed' | 'Ongoing' | 'Ringing';
+    startTime: Timestamp;
+    durationSeconds?: number;
+}
