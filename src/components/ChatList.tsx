@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { MessageSquare, Phone, Video } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { CallButton } from './CallButton';
 
 
@@ -62,7 +62,7 @@ export function ChatList() {
   if (loading) {
     return (
         <div className="p-3 space-y-4">
-            {[...Array(3)].map((_, i) => (
+            {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-3">
                     <Skeleton className="h-12 w-12 rounded-full" />
                     <div className="flex-1 space-y-2">
@@ -73,6 +73,10 @@ export function ChatList() {
             ))}
         </div>
     )
+  }
+  
+  if(chats.length === 0) {
+    return <p className="text-center text-muted-foreground p-4">No chats yet. Start a conversation with a friend!</p>
   }
 
   const handleChatClick = (otherUid: string) => {
@@ -169,6 +173,7 @@ export function useUserList() {
 
 export function UserList() {
     const { users, loading, currentUserProfile, sendFriendRequest } = useUserList();
+    const router = useRouter();
     
     const getButtonState = (otherUser: any) => {
         if (!currentUserProfile) {
@@ -181,7 +186,7 @@ export function UserList() {
             return <Button disabled>Request Sent</Button>
         }
         if (currentUserProfile.friendRequests?.includes(otherUser.uid)) {
-             return <Button disabled>Accept Request</Button>
+             return <Button onClick={() => router.push('/#requests')}>Accept Request</Button>
         }
         return <Button onClick={() => sendFriendRequest(otherUser.uid)}>Add Friend</Button>
     }
@@ -393,5 +398,3 @@ export function RequestList() {
         </div>
     )
 }
-
-    
