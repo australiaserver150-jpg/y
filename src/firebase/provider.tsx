@@ -2,6 +2,7 @@
 import { FirebaseApp } from 'firebase/app';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
+import { FirebaseStorage } from 'firebase/storage';
 import {
   ReactNode,
   createContext,
@@ -14,6 +15,7 @@ interface FirebaseContextType {
   firebaseApp: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
+  storage: FirebaseStorage;
 }
 
 // Create the context
@@ -27,11 +29,13 @@ export function FirebaseProvider({
   firebaseApp,
   auth,
   firestore,
+  storage,
 }: {
   children: ReactNode;
   firebaseApp: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
+  storage: FirebaseStorage;
 }) {
   if (!firebaseApp) {
     return (
@@ -44,7 +48,7 @@ export function FirebaseProvider({
     );
   }
 
-  const value = { firebaseApp, auth, firestore };
+  const value = { firebaseApp, auth, firestore, storage };
 
   return (
     <FirebaseContext.Provider value={value}>
@@ -73,4 +77,8 @@ export function useAuth() {
 
 export function useFirestore() {
   return useFirebase().firestore;
+}
+
+export function useStorage() {
+  return useFirebase().storage;
 }

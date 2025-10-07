@@ -170,7 +170,8 @@
   },
   "auth": {
     "providers": [
-      "google.com"
+      "google.com",
+      "firebase-storage"
     ]
   },
   "firestore": {
@@ -192,7 +193,7 @@
       },
       "description": "Stores chat conversations and their participant information."
     },
-    "/chats/{chatId}/messages/{messageId}": {
+    "/chats/{chatI d}/messages/{messageId}": {
       "schema": {
         "$ref": "#/entities/ChatMessage"
       },

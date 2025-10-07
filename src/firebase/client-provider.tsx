@@ -2,6 +2,7 @@
 import { FirebaseApp, initializeApp, getApps, getApp } from 'firebase/app';
 import { Auth, getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
+import { FirebaseStorage, getStorage } from 'firebase/storage';
 import { ReactNode } from 'react';
 import { FirebaseProvider } from './provider';
 
@@ -16,9 +17,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const firebaseApp: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth: Auth = getAuth(firebaseApp);
-const firestore: Firestore = getFirestore(firebaseApp);
+const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+export const auth: Auth = getAuth(app);
+export const db: Firestore = getFirestore(app);
+export const storage: FirebaseStorage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 
@@ -38,9 +40,10 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
 
   return (
     <FirebaseProvider
-      firebaseApp={firebaseApp}
+      firebaseApp={app}
       auth={auth}
-      firestore={firestore}
+      firestore={db}
+      storage={storage}
     >
       {children}
     </FirebaseProvider>
