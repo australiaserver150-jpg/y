@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, onSnapshot, collection, addDoc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, addDoc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
@@ -71,7 +71,7 @@ export function CallInterface({ callId }: { callId: string }) {
         }
         if (firestore) {
             const callDocRef = doc(firestore, 'calls', callId);
-            await updateDoc(callDocRef, { status: 'ended' });
+            await updateDoc(callDocRef, { status: 'ended', endedAt: serverTimestamp() });
         }
         router.back();
     };
