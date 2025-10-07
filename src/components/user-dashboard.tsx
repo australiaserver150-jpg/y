@@ -13,8 +13,6 @@ export function UserDashboard() {
       <header className="flex items-center justify-between p-4 border-b sticky top-0 z-10 bg-background">
         <h1 className="text-xl font-bold">BestU ChaT</h1>
         <div className="flex items-center gap-4">
-          <Camera />
-          <Search />
           <UserNav />
         </div>
       </header>

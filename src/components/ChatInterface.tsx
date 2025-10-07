@@ -21,7 +21,6 @@ import { Button } from './ui/button';
 import { MessageBubble, type Message, type OtherUser } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { useRouter } from 'next/navigation';
-import { CallButton } from './CallButton';
 
 
 export function ChatInterface({ otherUid }: { otherUid: string }) {
@@ -136,8 +135,6 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
           <h2 className="text-xl font-bold">{otherUser?.name || 'Chat'}</h2>
           {otherUser && <p className={`text-sm ${otherUser.onlineStatus ? 'text-green-500' : 'text-muted-foreground'}`}>{otherUser.onlineStatus ? 'Online' : 'Offline'}</p>}
         </div>
-        <CallButton calleeUid={otherUid} kind="audio"/>
-        <CallButton calleeUid={otherUid} kind="video"/>
       </header>
       <ScrollArea className="flex-1 p-4 bg-muted/20">
         <div className="flex flex-col gap-4">
