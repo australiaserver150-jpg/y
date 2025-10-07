@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, onSnapshot, doc, getDoc, DocumentData } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, DocumentData, orderBy } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
@@ -30,7 +30,7 @@ export function ChatList() {
     setLoading(true);
 
     const chatsCol = collection(firestore, 'chats');
-    const q = query(chatsCol, where('participants', 'array-contains', user.uid));
+    const q = query(chatsCol, where('participants', 'array-contains', user.uid), orderBy('updatedAt', 'desc'));
     
     const unsubscribe = onSnapshot(q, async (snap) => {
       const chatsData: Chat[] = [];
@@ -47,7 +47,7 @@ export function ChatList() {
         }
         chatsData.push(chat);
       }
-      setChats(chatsData.sort((a, b) => (b.updatedAt?.toMillis() || 0) - (a.updatedAt?.toMillis() || 0)));
+      setChats(chatsData);
       setLoading(false);
     }, (error) => {
         console.error("Error fetching chats:", error);

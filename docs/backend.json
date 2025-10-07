@@ -92,12 +92,72 @@
           "format": "date-time"
         }
       }
+    },
+    "Call": {
+      "title": "Call",
+      "description": "Represents a WebRTC call session.",
+      "type": "object",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "audio",
+            "video"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ringing",
+            "connected",
+            "ended"
+          ]
+        },
+        "caller": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "offer": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "sdp": {
+              "type": "string"
+            }
+          }
+        },
+        "answer": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "sdp": {
+              "type": "string"
+            }
+          }
+        }
+      }
     }
   },
   "auth": {
     "providers": [
-      "google.com",
-      "firebase-storage"
+      "google.com"
     ]
   },
   "firestore": {
@@ -118,6 +178,19 @@
         "$ref": "#/entities/ChatMessage"
       },
       "description": "A subcollection for messages within a specific chat."
+    },
+    "/calls/{callId}": {
+      "schema": {
+        "$ref": "#/entities/Call"
+      },
+      "description": "Stores WebRTC call signaling data."
+    },
+    "/calls/{callId}/candidates/{candidateId}": {
+      "schema": {
+        "type": "object",
+        "properties": {}
+      },
+      "description": "ICE candidates for a call"
     }
   }
 }
