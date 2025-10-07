@@ -82,7 +82,15 @@ export default function ChatPage() {
         <div className="flex flex-col h-screen max-w-md mx-auto bg-background border-x">
             {/* Header */}
             <header className="flex items-center justify-between p-4 bg-card text-card-foreground shadow-sm">
-                <h1 className="text-xl font-bold font-headline">ConverseHub</h1>
+                <div className="flex items-center gap-4">
+                    <button onClick={() => router.push('/settings')} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full">
+                        <Avatar className="h-10 w-10">
+                            <AvatarImage src={user?.photoURL || undefined} />
+                            <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                    </button>
+                    <h1 className="text-xl font-bold font-headline">ConverseHub</h1>
+                </div>
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" onClick={handleCamera}><Camera className="w-6 h-6"/></Button>
                     <Button variant="ghost" size="icon" onClick={handleSearch}><Search className="w-6 h-6"/></Button>
