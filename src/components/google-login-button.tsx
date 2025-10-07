@@ -6,6 +6,8 @@ import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDocs, query, collection, where } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
@@ -67,22 +69,45 @@ export default function GoogleLoginButton() {
             username = `${baseUsername}${counter}`;
             }
         }
-
-        await setDoc(userRef, {
+        
+        const profileData = {
             name: user.displayName,
             username: username,
             email: user.email,
             profilePicture: user.photoURL,
-        }, { merge: true });
+        };
+
+        setDoc(userRef, profileData, { merge: true })
+            .then(() => {
+                toast({
+                    title: 'Signed in successfully!',
+                    description: `Welcome ${user.displayName || user.email}!`,
+                });
+            })
+            .catch((error) => {
+                if (error.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                        path: userRef.path,
+                        operation: 'create',
+                        requestResourceData: profileData,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                } else {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Google login failed!',
+                        description: error.message || 'An unexpected error occurred.',
+                    });
+                }
+            });
+      } else {
+         toast({
+            title: 'Signed in successfully!',
+            description: `Welcome ${user.displayName || user.email}!`,
+        });
       }
 
-      toast({
-        title: 'Signed in successfully!',
-        description: `Welcome ${user.displayName || user.email}!`,
-      });
-
     } catch (error: any) {
-      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Google login failed!',

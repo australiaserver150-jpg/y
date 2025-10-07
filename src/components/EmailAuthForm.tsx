@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export function EmailAuthForm() {
   const auth = useAuth();
@@ -31,13 +33,33 @@ export function EmailAuthForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
       const userRef = doc(firestore, 'users', userCredential.user.uid);
-      await setDoc(userRef, {
+      const profileData = {
         name: displayName,
         username: username,
         email: userCredential.user.email,
         profilePicture: userCredential.user.photoURL,
-      }, { merge: true });
-      toast({ title: 'Success!', description: 'Your account has been created.' });
+      };
+
+      setDoc(userRef, profileData, { merge: true })
+        .then(() => {
+            toast({ title: 'Success!', description: 'Your account has been created.' });
+        })
+        .catch((error) => {
+            if (error.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                    path: userRef.path,
+                    operation: 'create',
+                    requestResourceData: profileData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } else {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Sign-up failed.',
+                    description: error.message,
+                });
+            }
+        });
     } catch (error: any) {
       toast({
         variant: 'destructive',

@@ -7,6 +7,7 @@ import {
   createContext,
   useContext,
 } from 'react';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 // Define the context type
 interface FirebaseContextType {
@@ -47,6 +48,7 @@ export function FirebaseProvider({
 
   return (
     <FirebaseContext.Provider value={value}>
+      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );
