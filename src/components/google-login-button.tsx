@@ -3,7 +3,7 @@
 import { googleProvider } from '@/firebase/client-provider';
 import { signInWithPopup } from 'firebase/auth';
 import { useAuth, useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDocs, query, collection, where } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,12 +48,36 @@ export default function GoogleLoginButton() {
       const user = result.user;
       
       const userRef = doc(firestore, 'user_profiles', user.uid);
-      await setDoc(userRef, {
-        name: user.displayName,
-        username: user.email?.split('@')[0] || '',
-        email: user.email,
-        profilePicture: user.photoURL,
-      }, { merge: true });
+      
+      // Check if user already exists
+      const userDocs = await getDocs(query(collection(firestore, "user_profiles"), where("email", "==", user.email)));
+      
+      if (userDocs.empty) {
+        // New user, generate unique username
+        let baseUsername = user.displayName?.toLowerCase().replace(/\s+/g, "") || user.email?.split('@')[0] || "user";
+        let username = baseUsername;
+        let exists = true;
+        let counter = 0;
+
+        while (exists) {
+            const q = query(collection(firestore, "user_profiles"), where("username", "==", username));
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) {
+            exists = false; // unique found
+            } else {
+            counter++;
+            username = `${baseUsername}${counter}`;
+            }
+        }
+
+        await setDoc(userRef, {
+            name: user.displayName,
+            username: username,
+            email: user.email,
+            profilePicture: user.photoURL,
+        }, { merge: true });
+      }
+
 
       toast({
         title: 'Signed in successfully!',

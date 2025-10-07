@@ -35,7 +35,7 @@
       "schema": {
         "$ref": "#/entities/UserProfile"
       },
-      "description": "Stores public profile information for each user."
+      "description": "Stores public profile information for each user, ensuring a unique username."
     }
   }
 }
