@@ -18,7 +18,7 @@ const BottomNavItem = ({ icon: Icon, label, isActive, onClick }: { icon: any, la
     </Button>
 )
 
-const ChatListItem = ({ chat, currentUserId }: { chat: Chat, currentUserId: string }) => {
+const ChatListItem = ({ chat, currentUserId, onClick }: { chat: Chat, currentUserId: string, onClick: () => void }) => {
     const otherParticipant = chat.participantInfo.find(p => p.userId !== currentUserId);
     if (!otherParticipant) return null;
 
@@ -28,7 +28,7 @@ const ChatListItem = ({ chat, currentUserId }: { chat: Chat, currentUserId: stri
 
 
     return (
-        <div className="flex items-center gap-4 p-3 hover:bg-muted/50 cursor-pointer">
+        <div onClick={onClick} className="flex items-center gap-4 p-3 hover:bg-muted/50 cursor-pointer">
             <Avatar className="h-12 w-12">
                 <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name}/>
                 <AvatarFallback>{otherParticipant.name.charAt(0)}</AvatarFallback>
@@ -101,7 +101,7 @@ export default function ChatPage() {
             <main className="flex-1 overflow-y-auto">
                 <div className="divide-y">
                     {chats && user ? (
-                        chats.map(chat => <ChatListItem key={chat.id} chat={chat} currentUserId={user.uid} />)
+                        chats.map(chat => <ChatListItem key={chat.id} chat={chat} currentUserId={user.uid} onClick={() => router.push(`/chat/${chat.id}`)} />)
                     ) : (
                         <p className="p-4 text-center text-muted-foreground">No chats found.</p>
                     )}

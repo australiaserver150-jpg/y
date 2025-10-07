@@ -10,9 +10,9 @@ export type User = {
 
 export type Message = {
   id: string;
-  sender: User;
+  senderId: string;
   text: string;
-  timestamp: Date;
+  timestamp: Timestamp;
 };
 
 export type Conversation = {
@@ -35,5 +35,3 @@ export type Chat = {
   participantInfo: ChatParticipant[];
   chatName?: string;
 };
-
-    
