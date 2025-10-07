@@ -201,10 +201,10 @@ export function CallInterface({ callId }: { callId: string }) {
     return (
         <div className="flex flex-col h-screen bg-black text-white">
             <div className="relative flex-1 flex items-center justify-center">
-                <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover" />
+                <video ref={remoteVideoRef} id="remoteVideo" autoPlay playsInline className="h-full w-full object-cover" />
                 
                 <Card className="absolute top-4 right-4 w-48 h-64 border-2 border-white">
-                    <video ref={localVideoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
+                    <video ref={localVideoRef} id="localVideo" autoPlay playsInline muted className="h-full w-full object-cover" />
                 </Card>
 
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
