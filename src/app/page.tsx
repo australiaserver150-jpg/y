@@ -28,6 +28,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const router = useRouter();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -41,6 +42,7 @@ export default function AuthPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -57,11 +59,14 @@ export default function AuthPage() {
         title: "Uh oh! Something went wrong.",
         description: error.message,
       });
+    } finally {
+        setLoading(false);
     }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push("/chat");
@@ -71,6 +76,8 @@ export default function AuthPage() {
         title: "Uh oh! Something went wrong.",
         description: error.message,
       });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -114,8 +121,8 @@ export default function AuthPage() {
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                  <Button type="submit" className="w-full">
-                    Login
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Logging in..." : "Login"}
                   </Button>
                 </div>
               </form>
@@ -154,8 +161,8 @@ export default function AuthPage() {
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                  <Button type="submit" className="w-full">
-                    Sign Up
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Signing up..." : "Sign Up"}
                   </Button>
                 </div>
               </form>
