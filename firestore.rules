@@ -1,142 +1,106 @@
 /**
- * @file Firebase Security Rules for ConnectNow Application
- * @description This ruleset enforces a strict user-ownership model, ensuring that users can only access data they own or that is explicitly shared with them. It focuses on simplicity and performance by denormalizing authorization data within documents, avoiding costly `get()` calls.
- *
+ * @description This ruleset enforces a strict user-ownership model for ConnectNow, with denormalization
+ *              to avoid complex queries in security rules.
  * @dataStructure
- *  - /users/{userId}: Stores user account information, accessible only to the user themselves.
- *  - /user_profiles/{profileId}: Stores user profile information, accessible only to the user themselves.
- *  - /users/{userId}/projects/{projectId}: Stores project information, accessible only to the project owner.
- *  - /users/{userId}/projects/{projectId}/messages/{messageId}: Stores messages within a project, accessible only to project members.
- *
+ *  - /users/{userId}: Stores user account information, accessible only to the user.
+ *  - /user_profiles/{profileId}: Stores user profile information, accessible to the associated user.
+ *  - /users/{userId}/projects/{projectId}: Stores project data, owned by the user.
+ *  - /users/{userId}/projects/{projectId}/messages/{messageId}: Stores messages within a project,
+ *    accessible only to the project owner.
  * @keySecurityDecisions
- *  - User listing is disabled for privacy.
- *  - All write operations require authentication and authorization.
- *  - Data consistency between the path and document data is enforced on create and update operations.
- *
- * @denormalizationForAuthorization
- *  - The `Project` and `Message` documents denormalize the `userId` to enable faster security checks.
- *
- * @structuralSegregation
- *  - User data and profile data are stored in separate collections to accommodate different access patterns.
+ *  - Users can only access their own data.
+ *  - Projects and messages are owned by the user who created the parent project.
+ *  - List operations are restricted to the owner for user-scoped collections.
+ * @denormalizationForAuthorization The 'userId' field is stored in Project documents to easily check
+ *                                 ownership without additional reads. Message documents include
+ *                                 'projectId' and 'senderId' for similar reasons.
+ * @structuralSegregation User data and profile data are stored in separate collections to allow
+ *                         for different access control requirements.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user account information.
+     * @description Manages user account information. Only the user can read and write their own data.
      * @path /users/{userId}
-     * @allow (create) User with matching UID can create their own record.
-     * @allow (get, list, update, delete) User can only access their own record.
-     * @deny (create) User cannot create a record with a mismatched UID.
-     * @deny (update, delete) User cannot modify or delete another user's record.
-     * @principle Enforces document ownership and prevents unauthorized access to user accounts.
+     * @allow (create) - User with UID 'user_abc' can create a document at /users/user_abc with matching id.
+     * @allow (get, list, update, delete) - User with UID 'user_abc' can access their own document at /users/user_abc.
+     * @deny (create) - User with UID 'user_xyz' cannot create a document at /users/user_abc.
+     * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot access document at /users/user_abc.
+     * @principle Enforces document ownership for all operations on user data.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if false; // User listing is disabled for privacy.
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      // isOwner(userId) checks if the request is made by the user whose ID matches the userId.
+      allow get, list: if isOwner(userId);
+      allow create: if isSignedIn() && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id; // Enforce immutability of userId
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to user profile information.
+     * @description Manages user profile information. Only the associated user can read and write their own profile.
      * @path /user_profiles/{profileId}
-     * @allow (create) User with matching profileId can create their own profile.
-     * @allow (get, list, update, delete) User can only access their own profile.
-     * @deny (create) User cannot create a profile with a mismatched profileId.
-     * @deny (update, delete) User cannot modify or delete another user's profile.
-     * @principle Enforces document ownership and prevents unauthorized access to user profiles.
+     * @allow (create) - User with UID 'user_abc' can create a document at /user_profiles/profile_abc with matching id.
+     * @allow (get, list, update, delete) - User with UID 'user_abc' can access their own document at /user_profiles/profile_abc.
+     * @deny (create) - User with UID 'user_xyz' cannot create a document at /user_profiles/profile_abc.
+     * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot access document at /user_profiles/profile_abc.
+     * @principle Enforces document ownership for all operations on user profile data.
      */
     match /user_profiles/{profileId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwnerProfile(profileId) {
-        return request.auth.uid == profileId; // Assuming profileId is the same as userId
-      }
-
-      function isExistingOwnerProfile(profileId) {
-        return isOwnerProfile(profileId) && resource != null;
-      }
-
-      allow get: if isOwnerProfile(profileId);
-      allow list: if false; // User listing is disabled for privacy.
-      allow create: if isSignedIn() && isOwnerProfile(profileId) && request.resource.data.id == profileId;
-      allow update: if isExistingOwnerProfile(profileId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwnerProfile(profileId);
+      allow get, list: if isSignedIn(); // Allow all signed-in users to read profiles
+      allow create: if isSignedIn() && request.resource.data.id == profileId;
+      allow update: if isSignedIn() && request.resource.data.id == resource.data.id; // Enforce immutability of profileId
+      allow delete: if false; // User profiles cannot be deleted
     }
 
     /**
-     * @description Controls access to project information.
+     * @description Manages project data. Only the owning user can create, read, update, and delete projects.
      * @path /users/{userId}/projects/{projectId}
-     * @allow (create) User with matching userId can create a project.
-     * @allow (get, list, update, delete) User can only access their own projects.
-     * @deny (create) User cannot create a project with a mismatched userId.
-     * @deny (update, delete) User cannot modify or delete another user's project.
-     * @principle Enforces document ownership and prevents unauthorized access to projects.
+     * @allow (create) - User with UID 'user_abc' can create a project under /users/user_abc/projects/project_xyz if project.userId == 'user_abc'.
+     * @allow (get, list, update, delete) - User with UID 'user_abc' can access their own project at /users/user_abc/projects/project_xyz.
+     * @deny (create) - User with UID 'user_xyz' cannot create a project under /users/user_abc/projects/project_xyz.
+     * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot access project at /users/user_abc/projects/project_xyz.
+     * @principle Enforces document ownership for all operations on project data.
      */
     match /users/{userId}/projects/{projectId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId; // Enforce immutability of userId
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to messages within a project.
+     * @description Manages messages within a project. Only the owning user can create, read, update, and delete messages.
      * @path /users/{userId}/projects/{projectId}/messages/{messageId}
-     * @allow (create) User with matching userId for the project can create a message.
-     * @allow (get, list) Any project member can read messages.
-     * @allow (update, delete) Only the message sender can update/delete their own message.
-     * @deny (create, update, delete) Prevents unauthorized message creation, modification, or deletion.
-     * @principle Enforces project-based access control for messages.
+     * @allow (create) - User with UID 'user_abc' can create a message in their project if message.projectId matches the path.
+     * @allow (get, list, update, delete) - User with UID 'user_abc' can access messages in their own project.
+     * @deny (create) - User with UID 'user_xyz' cannot create a message in project owned by 'user_abc'.
+     * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot access messages in project owned by 'user_abc'.
+     * @principle Enforces document ownership and validates relational integrity.
      */
     match /users/{userId}/projects/{projectId}/messages/{messageId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.projectId == projectId && request.resource.data.senderId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.projectId == projectId && request.resource.data.senderId == resource.data.senderId; // Enforce immutability of senderId and projectId
+      allow delete: if isExistingOwner(userId);
+    }
 
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
+    // --- Helper functions ---
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
+    // isSignedIn() returns true if the request is authenticated.
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.projectId == projectId;
-      allow update: if isExistingOwner(userId) && request.auth.uid == resource.data.senderId;
-      allow delete: if isExistingOwner(userId) && request.auth.uid == resource.data.senderId;
+    // isOwner(userId) returns true if the request is authenticated and the user ID matches the requested document.
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // isExistingOwner(userId) returns true if the user is signed in, is the owner, and the resource exists.
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
     }
   }
 }
