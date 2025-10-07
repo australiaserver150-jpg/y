@@ -30,7 +30,7 @@ export function CallManager() {
 
                     if (isCallee) {
                         const callerDoc = await getDoc(doc(firestore, 'users', call.caller));
-                        const callerName = callerDoc.data()?.name || 'A user';
+                        const callerName = callerDoc.data()?.displayName || 'A user';
 
                         const { id } = toast({
                             title: `Incoming ${call.type} call`,

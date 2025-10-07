@@ -55,7 +55,7 @@ export default function GoogleLoginButton() {
       if (!userSnap.exists()) {
         const username = user.email!.split('@')[0];
         const profileData = {
-            name: user.displayName,
+            displayName: user.displayName,
             username: username,
             email: user.email,
             profilePicture: user.photoURL,

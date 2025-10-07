@@ -22,11 +22,11 @@ function SearchResults({ results, getButtonState }: { results: DocumentData[], g
             {results.map((u) => (
                  <div key={u.uid} className="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800">
                     <Avatar className="h-12 w-12">
-                        <AvatarImage src={u.profilePicture || undefined} alt={u.name}/>
-                        <AvatarFallback>{u.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                        <AvatarImage src={u.profilePicture || undefined} alt={u.displayName}/>
+                        <AvatarFallback>{u.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
                      <div className="flex-1 ml-3">
-                        <p className="font-semibold text-gray-800 dark:text-gray-200">{u.name}</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">{u.displayName}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">@{u.username}</p>
                     </div>
                     {getButtonState(u)}

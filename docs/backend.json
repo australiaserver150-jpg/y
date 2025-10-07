@@ -5,7 +5,7 @@
       "description": "Represents a user's public profile.",
       "type": "object",
       "properties": {
-        "name": {
+        "displayName": {
           "type": "string",
           "description": "The user's flexible display name."
         },
@@ -39,7 +39,7 @@
         }
       },
       "required": [
-        "name",
+        "displayName",
         "username"
       ]
     },

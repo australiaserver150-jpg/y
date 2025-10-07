@@ -12,7 +12,7 @@ export type Message = {
 };
 
 export type OtherUser = {
-  name?: string;
+  displayName?: string;
   profilePicture?: string;
   onlineStatus?: boolean;
 } | null;
@@ -23,8 +23,8 @@ export function MessageBubble({ message, isMine, otherUser }: { message: Message
       <div className={`flex items-end gap-2 ${isMine ? 'justify-end' : 'justify-start'}`}>
           {!isMine && (
               <Avatar className="h-8 w-8">
-                  <AvatarImage src={otherUser?.profilePicture} alt={otherUser?.name || 'U'} />
-                  <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+                  <AvatarImage src={otherUser?.profilePicture} alt={otherUser?.displayName || 'U'} />
+                  <AvatarFallback>{otherUser?.displayName?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
           )}
           <div className={`max-w-[75%] rounded-lg p-3 ${isMine ? 'bg-primary text-primary-foreground' : 'bg-card shadow-sm'}`}>

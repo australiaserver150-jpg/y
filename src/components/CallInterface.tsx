@@ -206,9 +206,9 @@ export function CallInterface({ callId }: { callId: string }) {
                         <>
                         <Avatar className="h-24 w-24 mb-4">
                             <AvatarImage src={otherUser?.profilePicture}/>
-                            <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+                            <AvatarFallback>{otherUser?.displayName?.charAt(0) || 'U'}</AvatarFallback>
                         </Avatar>
-                        <h2 className="text-2xl font-bold">{otherUser?.name}</h2>
+                        <h2 className="text-2xl font-bold">{otherUser?.displayName}</h2>
                         <p className="capitalize">{callStatus}...</p>
                         </>
                     )}

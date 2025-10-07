@@ -22,8 +22,8 @@ export function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [profile, setProfile] = useState<{name?: string; username?: string; profilePicture?: string, onlineStatus?: boolean;}>({});
-  const [newName, setNewName] = useState('');
+  const [profile, setProfile] = useState<{displayName?: string; username?: string; profilePicture?: string, onlineStatus?: boolean;}>({});
+  const [newDisplayName, setNewDisplayName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export function SettingsPage() {
         if (snap.exists()) {
           const data = snap.data();
           setProfile(data);
-          setNewName(data.name || '');
+          setNewDisplayName(data.displayName || '');
         }
       });
     }
@@ -47,22 +47,22 @@ export function SettingsPage() {
   };
 
   const handleNameChange = async () => {
-    if (user && firestore && newName.trim() !== '' && newName.trim() !== profile.name) {
+    if (user && firestore && newDisplayName.trim() !== '' && newDisplayName.trim() !== profile.displayName) {
       const userDocRef = doc(firestore, 'users', user.uid);
       try {
-        await updateDoc(userDocRef, { name: newName.trim() }).catch(error => {
+        await updateDoc(userDocRef, { displayName: newDisplayName.trim() }).catch(error => {
           if (error.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
               path: userDocRef.path,
               operation: 'update',
-              requestResourceData: { name: newName.trim() }
+              requestResourceData: { displayName: newDisplayName.trim() }
             });
             errorEmitter.emit('permission-error', permissionError);
           } else {
             throw error;
           }
         });
-        setProfile(p => ({...p, name: newName.trim()}));
+        setProfile(p => ({...p, displayName: newDisplayName.trim()}));
         toast({ title: 'Success', description: 'Display name updated.' });
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -145,15 +145,15 @@ export function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="flex items-center space-x-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={profile.profilePicture || ''} alt={profile.name || 'user'} />
-                <AvatarFallback>{profile.name?.charAt(0) || user.email?.charAt(0) || 'U'}</AvatarFallback>
+                <AvatarImage src={profile.profilePicture || ''} alt={profile.displayName || 'user'} />
+                <AvatarFallback>{profile.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
               <input type="file" ref={fileInputRef} onChange={handlePhotoChange} className="hidden" accept="image/*"/>
               <Button onClick={() => fileInputRef.current?.click()}>Change Photo</Button>
             </div>
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
-              <Input id="displayName" value={newName} onChange={(e) => setNewName(e.target.value)} />
+              <Input id="displayName" value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>

@@ -90,15 +90,15 @@ export function ChatList() {
           <div className="relative">
             {chat.otherUser ? (
               <Avatar className="h-12 w-12">
-                <AvatarImage src={chat.otherUser.profilePicture || undefined} alt={chat.otherUser.name}/>
-                <AvatarFallback>{chat.otherUser.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                <AvatarImage src={chat.otherUser.profilePicture || undefined} alt={chat.otherUser.displayName}/>
+                <AvatarFallback>{chat.otherUser.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
             ) : (
                 <Skeleton className="h-12 w-12 rounded-full" />
             )}
           </div>
           <div className="flex-1 ml-3">
-            <p className="font-semibold text-gray-800 dark:text-gray-200">{chat.otherUser?.name || 'Chat'}</p>
+            <p className="font-semibold text-gray-800 dark:text-gray-200">{chat.otherUser?.displayName || 'Chat'}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{chat.lastMessage}</p>
           </div>
           <div className="flex flex-col items-end">
@@ -211,11 +211,11 @@ export function UserList() {
             {users.map((u) => (
                  <div key={u.uid} className="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800">
                     <Avatar className="h-12 w-12">
-                        <AvatarImage src={u.profilePicture || undefined} alt={u.name}/>
-                        <AvatarFallback>{u.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                        <AvatarImage src={u.profilePicture || undefined} alt={u.displayName}/>
+                        <AvatarFallback>{u.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
                      <div className="flex-1 ml-3">
-                        <p className="font-semibold text-gray-800 dark:text-gray-200">{u.name}</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">{u.displayName}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">@{u.username}</p>
                     </div>
                     {getButtonState(u)}
@@ -291,11 +291,11 @@ export function FriendList() {
       {friends.map((f) => (
         <div key={f.uid} className="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={f.profilePicture || undefined} alt={f.name}/>
-            <AvatarFallback>{f.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+            <AvatarImage src={f.profilePicture || undefined} alt={f.displayName}/>
+            <AvatarFallback>{f.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
           <div className="flex-1 ml-3">
-            <p className="font-semibold text-gray-800 dark:text-gray-200">{f.name}</p>
+            <p className="font-semibold text-gray-800 dark:text-gray-200">{f.displayName}</p>
              <p className={`text-sm ${f.onlineStatus ? 'text-green-500' : 'text-muted-foreground'}`}>{f.onlineStatus ? 'Online' : 'Offline'}</p>
           </div>
           <FriendActions friend={f} />
@@ -382,11 +382,11 @@ export function RequestList() {
             {requests.map((u) => (
                  <div key={u.uid} className="flex items-center p-3">
                     <Avatar className="h-12 w-12">
-                        <AvatarImage src={u.profilePicture || undefined} alt={u.name}/>
-                        <AvatarFallback>{u.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                        <AvatarImage src={u.profilePicture || undefined} alt={u.displayName}/>
+                        <AvatarFallback>{u.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
                      <div className="flex-1 ml-3">
-                        <p className="font-semibold text-gray-800 dark:text-gray-200">{u.name}</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">{u.displayName}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">@{u.username}</p>
                     </div>
                     <div className='flex gap-2'>

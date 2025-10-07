@@ -129,11 +129,11 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </Button>
         <Avatar className="h-10 w-10">
-            <AvatarImage src={otherUser?.profilePicture} alt={otherUser?.name || 'U'}/>
-            <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+            <AvatarImage src={otherUser?.profilePicture} alt={otherUser?.displayName || 'U'}/>
+            <AvatarFallback>{otherUser?.displayName?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          <h2 className="text-xl font-bold">{otherUser?.name || 'Chat'}</h2>
+          <h2 className="text-xl font-bold">{otherUser?.displayName || 'Chat'}</h2>
           {otherUser && <p className={`text-sm ${otherUser.onlineStatus ? 'text-green-500' : 'text-muted-foreground'}`}>{otherUser.onlineStatus ? 'Online' : 'Offline'}</p>}
         </div>
         <CallButton otherUid={otherUid} />
