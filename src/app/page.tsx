@@ -1,23 +1,22 @@
 "use client";
 
-import { useFirebase } from "@/firebase/provider";
+import { useAuth, useUser } from "@/firebase/provider";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect } from "react";
 import { Loading } from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 
 function LoginPageContent() {
-  const { auth } = useFirebase();
-  const [user, loading] = useAuthState(auth!);
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
+    if (!isUserLoading && user) {
       router.push("/chat");
     }
-  }, [user, router]);
+  }, [user, isUserLoading, router]);
 
   const handleGoogleSignIn = async () => {
     if (!auth) return;
@@ -30,7 +29,12 @@ function LoginPageContent() {
     }
   };
 
-  if (loading || user) {
+  if (isUserLoading || user) {
+    return <Loading />;
+  }
+
+  if (!auth) {
+    // Auth service is not yet available, show a loading state
     return <Loading />;
   }
 
@@ -55,10 +59,13 @@ function LoginPageContent() {
 
 
 export default function LoginPage() {
-  const { auth } = useFirebase();
+  const auth = useAuth();
+  const { isUserLoading } = useUser();
+
+  if (isUserLoading) {
+    return <Loading />;
+  }
 
   // Render content only when auth is initialized
-  return auth ? <LoginPageContent /> : <Loading />;
+  return <LoginPageContent />;
 }
-
-    
