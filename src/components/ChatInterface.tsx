@@ -58,10 +58,10 @@ function MessageBubble({ message, isMine, otherUser }: { message: Message, isMin
                   {message.createdAt?.toDate ? new Date(message.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
               </p>
           </div>
-           {isMine && (
+           {isMine && user && (
               <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.photoURL || undefined} />
-                  <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                  <AvatarImage src={user.photoURL || undefined} />
+                  <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
           )}
       </div>
@@ -81,6 +81,7 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [otherUser, setOtherUser] = useState<OtherUser>(null);
   const sendingRef = useRef(false);
 
@@ -135,6 +136,7 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
           snap.forEach((d) => arr.push({ id: d.id, ...(d.data() as Message) }));
           setMessages(arr);
           setLoading(false);
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
         }, (error) => {
             const permissionError = new FirestorePermissionError({
                 path: messagesCol.path,
@@ -165,15 +167,7 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
   }, [user, otherUid, firestore, toast]);
 
    useEffect(() => {
-    if (scrollAreaRef.current) {
-        // A bit of a hack to scroll to the bottom.
-        setTimeout(() => {
-            const scrollableView = scrollAreaRef.current?.querySelector('div[style*="overflow: auto"]');
-            if (scrollableView) {
-                scrollableView.scrollTop = scrollableView.scrollHeight;
-            }
-        }, 100);
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendText = async () => {
@@ -276,8 +270,8 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
   if (!user) return <p>Please log in to chat.</p>;
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-white dark:bg-black">
-      <header className="flex items-center gap-4 p-4 border-b">
+    <div className="flex flex-col h-screen max-w-md mx-auto bg-background dark:bg-black border-x">
+      <header className="flex items-center gap-4 p-4 border-b sticky top-0 bg-background z-10">
         <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </Button>
@@ -285,18 +279,23 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
             <AvatarImage src={otherUser?.profilePicture} />
             <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
-        <h2 className="text-xl font-bold flex-1">{otherUser?.name || 'Chat'}</h2>
+        <div className="flex-1">
+          <h2 className="text-xl font-bold">{otherUser?.name || 'Chat'}</h2>
+          {otherUser && <p className="text-sm text-muted-foreground">Online</p>}
+        </div>
         <CallButton calleeUid={otherUid} kind="audio" />
         <CallButton calleeUid={otherUid} kind="video" />
       </header>
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 p-4 bg-muted/20" ref={scrollAreaRef}>
         <div className="flex flex-col gap-4">
+          {messages.length === 0 && <p className="text-center text-muted-foreground mt-4">No messages yet. Say hi 👋</p>}
           {messages.map((m) => (
             <MessageBubble key={m.id} message={m} isMine={m.senderId === user.uid} otherUser={otherUser} />
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
-      <div className="flex items-center gap-2 border-t p-4">
+      <div className="flex items-center gap-2 border-t p-4 bg-background">
         <Input
           type="file"
           accept="image/*"
