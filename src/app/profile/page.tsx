@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Camera } from "lucide-react";
+import { Camera, Settings } from "lucide-react";
 import { Loading } from "@/components/Loading";
 import { useFirebase } from "@/firebase/provider";
 
@@ -122,8 +122,11 @@ function ProfilePageContent() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Profile Settings</CardTitle>
+          <Button variant="ghost" size="icon" onClick={() => router.push('/settings')}>
+            <Settings className="w-5 h-5"/>
+          </Button>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleProfileUpdate}>
