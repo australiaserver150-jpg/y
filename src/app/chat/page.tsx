@@ -115,10 +115,7 @@ function ChatPageContent() {
 
 
 export default function ChatPage() {
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  return isClient ? <ChatPageContent /> : <Loading />;
+  const { auth } = useFirebase();
+  
+  return auth ? <ChatPageContent /> : <Loading />;
 }

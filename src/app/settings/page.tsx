@@ -36,10 +36,7 @@ function ProtectedSettingsPage() {
 }
 
 export default function SettingsPage() {
-    const [isClient, setIsClient] = useState(false);
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
+    const { auth } = useFirebase();
 
-    return isClient ? <ProtectedSettingsPage /> : <Loading />;
+    return auth ? <ProtectedSettingsPage /> : <Loading />;
 }

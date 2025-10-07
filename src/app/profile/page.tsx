@@ -187,10 +187,7 @@ function ProfilePageContent() {
 }
 
 export default function ProfilePage() {
-    const [isClient, setIsClient] = useState(false);
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
+    const { auth } = useFirebase();
     
-    return isClient ? <ProfilePageContent /> : <Loading />;
+    return auth ? <ProfilePageContent /> : <Loading />;
 }
