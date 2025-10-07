@@ -49,11 +49,9 @@ export default function GoogleLoginButton() {
       
       const userRef = doc(firestore, 'user_profiles', user.uid);
       
-      // Check if user already exists
       const userDocs = await getDocs(query(collection(firestore, "user_profiles"), where("email", "==", user.email)));
       
       if (userDocs.empty) {
-        // New user, generate unique username
         let baseUsername = user.displayName?.toLowerCase().replace(/\s+/g, "") || user.email?.split('@')[0] || "user";
         let username = baseUsername;
         let exists = true;
@@ -63,7 +61,7 @@ export default function GoogleLoginButton() {
             const q = query(collection(firestore, "user_profiles"), where("username", "==", username));
             const snapshot = await getDocs(q);
             if (snapshot.empty) {
-            exists = false; // unique found
+            exists = false;
             } else {
             counter++;
             username = `${baseUsername}${counter}`;
@@ -77,7 +75,6 @@ export default function GoogleLoginButton() {
             profilePicture: user.photoURL,
         }, { merge: true });
       }
-
 
       toast({
         title: 'Signed in successfully!',
