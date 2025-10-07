@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { MessageSquare, Phone, Video } from 'lucide-react';
+import { CallButton } from './CallButton';
 
 
 type Chat = {
@@ -218,13 +220,26 @@ export function UserList() {
     )
 }
 
+function FriendActions({ friend }: { friend: DocumentData }) {
+    const router = useRouter();
+
+    return (
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => router.push(`/chat/${friend.uid}`)}>
+                <MessageSquare className="h-4 w-4" />
+                <span className="sr-only">Chat</span>
+            </Button>
+            <CallButton otherUid={friend.uid} />
+        </div>
+    );
+}
+
 export function FriendList() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [friends, setFriends] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
+  
   useEffect(() => {
     if (!user || !firestore) return;
 
@@ -269,7 +284,7 @@ export function FriendList() {
   return (
     <div className="flex flex-col">
       {friends.map((f) => (
-        <div key={f.uid} className="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" onClick={() => router.push(`/chat/${f.uid}`)}>
+        <div key={f.uid} className="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800">
           <Avatar className="h-12 w-12">
             <AvatarImage src={f.profilePicture || undefined} alt={f.name}/>
             <AvatarFallback>{f.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
@@ -278,6 +293,7 @@ export function FriendList() {
             <p className="font-semibold text-gray-800 dark:text-gray-200">{f.name}</p>
              <p className={`text-sm ${f.onlineStatus ? 'text-green-500' : 'text-muted-foreground'}`}>{f.onlineStatus ? 'Online' : 'Offline'}</p>
           </div>
+          <FriendActions friend={f} />
         </div>
       ))}
     </div>
@@ -377,3 +393,5 @@ export function RequestList() {
         </div>
     )
 }
+
+    
