@@ -1,5 +1,5 @@
 'use client';
-import { Camera, Search, Plus, MessageCircle, GitBranch, Users, Phone } from 'lucide-react';
+import { Camera, Search, Plus, MessageCircle, GitBranch, Users, Phone, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserNav } from './layout/user-nav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,15 +22,19 @@ export function UserDashboard() {
 
       <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="chats" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 rounded-none bg-primary text-primary-foreground">
+          <TabsList className="w-full grid grid-cols-3 rounded-none bg-primary text-primary-foreground">
             <TabsTrigger value="chats" className="text-primary-foreground/60 data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary-foreground rounded-none">Chats</TabsTrigger>
             <TabsTrigger value="users" className="text-primary-foreground/60 data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary-foreground rounded-none">Users</TabsTrigger>
+            <TabsTrigger value="settings" onFocus={() => router.push('/settings')} className="text-primary-foreground/60 data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary-foreground rounded-none">Settings</TabsTrigger>
           </TabsList>
           <TabsContent value="chats">
             <ChatList />
           </TabsContent>
           <TabsContent value="users">
             <UserList />
+          </TabsContent>
+          <TabsContent value="settings">
+            {/* Redirect handled by onFocus, content can be empty or a loader */}
           </TabsContent>
         </Tabs>
       </main>

@@ -1,90 +1,38 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { useUser, useFirestore, useStorage } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import {
   collection,
   doc,
   getDoc,
   onSnapshot,
-  addDoc,
   setDoc,
   query,
   orderBy,
   serverTimestamp,
-  updateDoc,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Paperclip, Send } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
 import { Loading } from './Loading';
 import { CallButton } from './CallButton';
-
-type Message = {
-  id?: string;
-  senderId: string;
-  text?: string;
-  imageURL?: string;
-  type: 'text' | 'image';
-  createdAt: any;
-};
-
-type OtherUser = {
-  name?: string;
-  profilePicture?: string;
-} | null;
-
-function MessageBubble({ message, isMine, otherUser }: { message: Message, isMine: boolean, otherUser: OtherUser }) {
-  const user = useUser().user;
-  return (
-      <div className={`flex items-end gap-2 ${isMine ? 'justify-end' : 'justify-start'}`}>
-          {!isMine && (
-              <Avatar className="h-8 w-8">
-                  <AvatarImage src={otherUser?.profilePicture} />
-                  <AvatarFallback>{otherUser?.name?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
-          )}
-          <div className={`max-w-[75%] rounded-lg p-3 ${isMine ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-              {message.type === 'text' && <p className="whitespace-pre-wrap">{message.text}</p>}
-              {message.type === 'image' && message.imageURL && (
-                  <img src={message.imageURL} alt="Sent" className="max-w-full rounded-md" />
-              )}
-              <p className="text-xs mt-2 text-right opacity-70">
-                  {message.createdAt?.toDate ? new Date(message.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
-              </p>
-          </div>
-           {isMine && user && (
-              <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.photoURL || undefined} />
-                  <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
-          )}
-      </div>
-  );
-}
+import { Button } from './ui/button';
+import { MessageBubble, type Message, type OtherUser } from './MessageBubble';
+import { ChatInput } from './ChatInput';
 
 
 export function ChatInterface({ otherUid }: { otherUid: string }) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
 
   const [chatId, setChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [text, setText] = useState('');
-  const fileRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [otherUser, setOtherUser] = useState<OtherUser>(null);
-  const sendingRef = useRef(false);
-
 
   useEffect(() => {
     if (!user || !firestore) return;
@@ -136,7 +84,6 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
           snap.forEach((d) => arr.push({ id: d.id, ...(d.data() as Message) }));
           setMessages(arr);
           setLoading(false);
-          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
         }, (error) => {
             const permissionError = new FirestorePermissionError({
                 path: messagesCol.path,
@@ -169,105 +116,10 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
    useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  const sendText = async () => {
-    if (!text.trim() || sendingRef.current) return;
-    if (!user || !chatId || !firestore) {
-      toast({ variant: 'destructive', title: 'Could not send message' });
-      return;
-    }
-    sendingRef.current = true;
-
-    try {
-      const messagesCol = collection(firestore, 'chats', chatId, 'messages');
-      const messageData = {
-        senderId: user.uid,
-        text: text.trim(),
-        type: 'text' as 'text',
-        createdAt: serverTimestamp(),
-      };
-      await addDoc(messagesCol, messageData).catch(error => {
-        if (error.code === 'permission-denied') {
-          const permissionError = new FirestorePermissionError({
-            path: messagesCol.path,
-            operation: 'create',
-            requestResourceData: messageData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        } else {
-          throw error;
-        }
-      });
-  
-      const chatDocRef = doc(firestore, 'chats', chatId);
-      await updateDoc(chatDocRef, {
-        lastMessage: text.trim(),
-        updatedAt: serverTimestamp(),
-      });
-      setText('');
-    } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Something went wrong.',
-            description: error.message || 'Could not send message.',
-        });
-    } finally {
-        sendingRef.current = false;
-    }
-  };
-
-  const sendImage = async (file: File | null) => {
-    if (!file) return;
-    if (!user || !chatId || !storage || !firestore) {
-        toast({ variant: 'destructive', title: 'Could not send image' });
-        return;
-    }
-    sendingRef.current = true;
-    
-    try {
-        const storageRef = ref(storage, `chatImages/${chatId}/${Date.now()}_${file.name}`);
-        const snap = await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(snap.ref);
-        
-        const messagesCol = collection(firestore, 'chats', chatId, 'messages');
-        const messageData = {
-            senderId: user.uid,
-            imageURL: url,
-            type: 'image' as 'image',
-            createdAt: serverTimestamp(),
-        };
-        await addDoc(messagesCol, messageData).catch(error => {
-             if (error.code === 'permission-denied') {
-                const permissionError = new FirestorePermissionError({
-                    path: messagesCol.path,
-                    operation: 'create',
-                    requestResourceData: messageData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-             } else {
-                throw error;
-             }
-        });
-        
-        const chatDocRef = doc(firestore, 'chats', chatId);
-        await updateDoc(chatDocRef, {
-            lastMessage: '[Image]',
-            updatedAt: serverTimestamp(),
-        });
-    } catch(error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Image upload failed',
-            description: error.message || 'Could not upload image.',
-        });
-    } finally {
-        sendingRef.current = false;
-        if(fileRef.current) fileRef.current.value = '';
-    }
-  };
   
   if (loading) return <Loading />;
   if (!user) return <p>Please log in to chat.</p>;
+  if (!chatId) return <Loading />;
 
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto bg-background dark:bg-black border-x">
@@ -286,7 +138,7 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
         <CallButton calleeUid={otherUid} kind="audio" />
         <CallButton calleeUid={otherUid} kind="video" />
       </header>
-      <ScrollArea className="flex-1 p-4 bg-muted/20" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 p-4 bg-muted/20">
         <div className="flex flex-col gap-4">
           {messages.length === 0 && <p className="text-center text-muted-foreground mt-4">No messages yet. Say hi 👋</p>}
           {messages.map((m) => (
@@ -295,35 +147,7 @@ export function ChatInterface({ otherUid }: { otherUid: string }) {
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
-      <div className="flex items-center gap-2 border-t p-4 bg-background">
-        <Input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          ref={fileRef}
-          onChange={(e) => sendImage(e.target.files ? e.target.files[0] : null)}
-        />
-        <Button variant="ghost" size="icon" onClick={() => fileRef.current?.click()}>
-          <Paperclip />
-           <span className="sr-only">Attach image</span>
-        </Button>
-        <Input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Type a message..."
-          className="flex-1"
-          onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendText();
-              }
-          }}
-        />
-        <Button onClick={sendText} disabled={!text.trim() || sendingRef.current}>
-          <Send />
-          <span className="sr-only">Send message</span>
-        </Button>
-      </div>
+      <ChatInput chatId={chatId} />
     </div>
   );
 }
