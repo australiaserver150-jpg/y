@@ -1,283 +1,286 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for private data,
- *              shared access for collaborative content, and public read access with
- *              owner-only writes for certain collections.
+ * @fileoverview Firestore Security Rules for the ConnectNow application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user-specific data,
+ * shared access for collaborative content like chats, and public read access with
+ * owner-only writes for statuses and channels. Data consistency between paths and
+ * document fields is strictly enforced.
  *
  * Data Structure:
- * - /users/{userId}: Stores private user account information, accessible only to the user.
- * - /user_profiles/{profileId}: Stores public user profile data, accessible to all.
- * - /users/{userId}/projects/{projectId}: Stores projects owned by a specific user, accessible only to the owner.
- * - /chats/{chatId}: Stores chat metadata, accessible to participants.
- * - /chats/{chatId}/messages/{messageId}: Stores chat messages, accessible to participants of the chat.
- * - /statuses/{statusId}: Stores status posts, publicly readable, but only the owner can modify.
- * - /channels/{channelId}: Stores channel metadata, publicly readable, but only the owner can modify.
- * - /channels/{channelId}/messages/{messageId}: Stores channel messages, accessible to members of the channel.
- * - /users/{userId}/callLogs/{callLogId}: Stores call logs for each user, accessible only to the user.
+ * - /users/{userId}: Stores private user account information.
+ * - /user_profiles/{profileId}: Stores public user profile information.
+ * - /users/{userId}/projects/{projectId}: Stores projects owned by a specific user.
+ * - /chats/{chatId}: Stores chat metadata and participant lists.
+ * - /chats/{chatId}/messages/{messageId}: Stores individual chat messages.
+ * - /statuses/{statusId}: Stores status posts, publicly readable but owner-writable.
+ * - /channels/{channelId}: Stores channel metadata, publicly readable but owner-writable.
+ * - /channels/{channelId}/messages/{messageId}: Stores channel messages.
+ * - /users/{userId}/callLogs/{callLogId}: Stores call logs for a specific user.
  *
  * Key Security Decisions:
- * - User listing is disallowed for privacy.
- * - Public read access is granted to statuses.
- * - Ownership is enforced through path-based matching and explicit userId fields.
- * - The rules are designed to prevent unauthorized data access and modification.
+ * - User listing is disabled.
+ * - Read-only collections are handled with `allow get, list: if true;`.
+ * - Ambiguous relationships default to strict owner-only access.
  *
  * Denormalization for Authorization:
- * - The `Project` entity includes a `userId` to reference the owning user.
- * - `Status` documents include `userName` and `userAvatar` for display.
- * - `Chat` documents include `participants` array.
- *
- * Structural Segregation:
- * - User data and profiles are separated into `/users/{userId}` and `/user_profiles/{profileId}`.
+ * - The `Project` entity includes a `userId` to reference the owning user, reinforcing ownership.
+ * - Chat documents contain a `participants` array and `participantInfo` array of User IDs for easy access control.
+ * - Status documents contain denormalized user information (`userName`, `userAvatar`).
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows access to user documents based on ownership.
+     * @description Controls access to user account information. Only the authenticated user can read or write their own data.
      * @path /users/{userId}
-     * @allow (create) User with ID 'user123' can create their own document.
-     * @allow (get) User with ID 'user123' can read their own document.
-     * @allow (update) User with ID 'user123' can update their own document.
-     * @allow (delete) User with ID 'user123' can delete their own document.
-     * @deny (create) User with ID 'user456' cannot create a document with ID 'user123'.
-     * @deny (get) User with ID 'user456' cannot read document with ID 'user123'.
+     * @allow (create) - User with ID 'user123' can create their own document with matching userId.
+     *   request.auth.uid == 'user123' && request.resource.data.id == 'user123'
+     * @allow (get, update, delete) - User with ID 'user123' can read, update, or delete their own document.
+     *   request.auth.uid == 'user123'
+     * @deny (create) - User with ID 'user456' cannot create a document with userId 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.id == 'user123'
+     * @deny (get, update, delete) - User with ID 'user456' cannot read, update, or delete the document of user 'user123'.
+     *   request.auth.uid == 'user456'
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
-      allow get: if isSignedIn() && isOwner(userId);
+      allow get: if isOwner(userId);
       allow list: if false; // User listing is not allowed.
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId);
-      allow delete: if isSignedIn() && isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows public read access to user profile documents.
+     * @description Controls access to user profile information. Only authenticated users can read profile data.
      * @path /user_profiles/{profileId}
-     * @allow (get) Any user can read any profile.
-     * @allow (list) Any user can list profiles.
-     * @deny (create) No one can create profiles directly.
-     * @deny (update) No one can update profiles directly.
-     * @deny (delete) No one can delete profiles directly.
-     * @principle Public read access with no write access.
+     * @allow (get, list) - Any authenticated user can read any user profile.
+     *   request.auth.uid != null
+     * @allow (create) - User with ID 'profile123' can create their own profile document with matching profileId.
+     *   request.auth.uid == 'user123' && request.resource.data.id == 'profile123'
+     * @allow (update, delete) - User with ID 'user123' can update or delete their profile document.
+     *   request.auth.uid == 'user123'
+     * @deny (create) - User with ID 'user456' cannot create a profile with profileId 'profile123'.
+     *   request.auth.uid == 'user456' && request.resource.data.id == 'profile123'
+     * @deny (update, delete) - User with ID 'user456' cannot update or delete the profile of user 'user123'.
+     *   request.auth.uid == 'user456'
+     * @principle Enforces read-only access for all authenticated users and owner-only writes.
      */
     match /user_profiles/{profileId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      function isOwnerProfile(profileId) {
+          return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profileId == profileId;
+      }
+
+      function isExistingOwnerProfile(profileId) {
+        return isOwnerProfile(profileId) && resource != null;
+      }
+
+      allow get, list: if isSignedIn();
+      allow create: if isOwnerProfile(profileId) && request.resource.data.id == profileId;
+      allow update: if isExistingOwnerProfile(profileId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwnerProfile(profileId);
     }
 
     /**
-     * @description Allows access to project documents based on ownership.
+     * @description Controls access to project documents. Only the owning user can create, read, update, or delete their projects.
      * @path /users/{userId}/projects/{projectId}
-     * @allow (create) User with ID 'user123' can create a project under their ID.
-     * @allow (get) User with ID 'user123' can read a project under their ID.
-     * @allow (update) User with ID 'user123' can update a project under their ID.
-     * @allow (delete) User with ID 'user123' can delete a project under their ID.
-     * @deny (create) User with ID 'user456' cannot create a project under user123.
-     * @deny (get) User with ID 'user456' cannot read a project under user123.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) - User with ID 'user123' can create a project under their userId with matching userId in the project data.
+     *   request.auth.uid == 'user123' && request.resource.data.userId == 'user123'
+     * @allow (get, update, delete) - User with ID 'user123' can read, update, or delete their project.
+     *   request.auth.uid == 'user123'
+     * @deny (create) - User with ID 'user456' cannot create a project under userId 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.userId == 'user123'
+     * @deny (get, update, delete) - User with ID 'user456' cannot read, update, or delete the project of user 'user123'.
+     *   request.auth.uid == 'user456'
+     * @principle Enforces strict user-ownership for all project data.
      */
     match /users/{userId}/projects/{projectId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-
       function isExistingOwner(userId) {
-          return isOwner(userId) && resource.data.userId == request.auth.uid;
+        return isOwner(userId) && resource != null;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows access to chat documents based on participant list.
+     * @description Controls access to chat metadata. All chat participants can read chat details, but only participants can modify it.
      * @path /chats/{chatId}
-     * @allow (get) User who is a participant can read the chat.
-     * @allow (list) N/A (No `resource` variable available)
-     * @allow (create) N/A
-     * @allow (update) N/A
-     * @allow (delete) N/A
-     * @deny (get) User who is not a participant cannot read the chat.
-     * @principle Enforces shared access based on the `participants` array.
+     * @allow (get, list) - Any chat participant can read the chat details.
+     *   request.auth.uid in resource.data.participants
+     * @allow (create) - Any authenticated user can create a chat.
+     *   request.auth.uid != null
+     * @allow (update, delete) - Only chat participants can update or delete the chat.
+     *   request.auth.uid in resource.data.participants
+     * @deny (get, list) - A non-authenticated user cannot read chat details.
+     *   request.auth.uid == null
+     * @principle Enforces shared access between chat participants.
      */
     match /chats/{chatId} {
-        function isSignedIn() {
-            return request.auth != null;
-        }
+      function isParticipant() {
+        return request.auth.uid in resource.data.participants;
+      }
 
-        function isParticipant() {
-            return isSignedIn() && request.auth.uid in resource.data.participants;
-        }
+      function isExistingParticipant() {
+        return isParticipant() && resource != null;
+      }
 
-        allow get: if isSignedIn() && isParticipant();
-        allow list: if isSignedIn(); // Listing of chats is public for prototyping.
-        allow create: if false;
-        allow update: if false;
-        allow delete: if false;
+      allow get, list: if isSignedIn() && isParticipant();
+      allow create: if isSignedIn();
+      allow update: if isExistingParticipant();
+      allow delete: if isExistingParticipant();
     }
 
     /**
-     * @description Allows access to message documents within a chat based on chat participants.
+     * @description Controls access to individual chat messages within a chat. Only chat participants can read messages, and only the sender can create a message.
      * @path /chats/{chatId}/messages/{messageId}
-     * @allow (get) User who is a participant of the chat can read the message.
-     * @allow (list) User who is a participant of the chat can list messages.
-     * @deny (create) User who is not a participant of the chat cannot create a message.
-     * @deny (update) User who is not a participant of the chat cannot update a message.
-     * @deny (delete) User who is not a participant of the chat cannot delete a message.
-     * @principle Enforces shared access based on the `participants` array in the chat document.
+     * @allow (get, list) - Any chat participant can read messages in the chat.
+     *   request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+     * @allow (create) - Only a chat participant can create a message, and their UID must match the senderId in the message data.
+     *   request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants && request.auth.uid == request.resource.data.senderId
+     * @deny (get, list) - A non-participant cannot read messages in the chat.
+     *   !(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants)
+     * @deny (update, delete) - Messages cannot be updated or deleted.
+     *   false
+     * @principle Enforces shared read access and sender-only create access for messages.
      */
     match /chats/{chatId}/messages/{messageId} {
-        function isSignedIn() {
-            return request.auth != null;
-        }
-
-        function isChatParticipant() {
-            return isSignedIn() && get(/databases/$(database)/documents/chats/$(chatId)).data.participants.hasAny([request.auth.uid]);
-        }
-
-        allow get: if isSignedIn() && isChatParticipant();
-        allow list: if isSignedIn() && isChatParticipant();
-        allow create: if isSignedIn() && isChatParticipant();
-        allow update: if false;
-        allow delete: if false;
-    }
-
-    /**
-     * @description Allows public read access to status documents, but only the owner can modify.
-     * @path /statuses/{statusId}
-     * @allow (get) Any user can read any status.
-     * @allow (list) Any user can list statuses.
-     * @allow (create) User can create a status if the userId matches their auth.
-     * @allow (update) User can update a status if they are the owner.
-     * @allow (delete) User can delete a status if they are the owner.
-     * @deny (create) User cannot create a status if the userId does not match their auth.
-     * @deny (update) User cannot update a status if they are not the owner.
-     * @deny (delete) User cannot delete a status if they are not the owner.
-     * @principle Public read access with owner-only writes.
-     */
-    match /statuses/{statusId} {
-      function isSignedIn() {
-        return request.auth != null;
+      function isChatParticipant(chatId) {
+        return request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-          return isSignedIn() && isOwner(userId) && resource.data.userId == request.auth.uid;
-      }
-
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && isExistingOwner(resource.data.userId);
-      allow delete: if isSignedIn() && isExistingOwner(resource.data.userId);
-    }
-
-    /**
-     * @description Allows public read access to channel documents, but only the owner can modify.
-     * @path /channels/{channelId}
-     * @allow (get) Any user can read any channel.
-     * @allow (list) Any user can list channels.
-     * @allow (create) User can create a channel if they are authenticated.
-     * @allow (update) User can update a channel if they are the owner.
-     * @allow (delete) User can delete a channel if they are the owner.
-     * @deny (create) User cannot create a channel if they are not authenticated.
-     * @deny (update) User cannot update a channel if they are not the owner.
-     * @deny (delete) User cannot delete a channel if they are not the owner.
-     * @principle Public read access with owner-only writes.
-     */
-    match /channels/{channelId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(ownerId) {
-        return request.auth.uid == ownerId;
-      }
-
-      function isExistingOwner(ownerId) {
-          return isSignedIn() && isOwner(ownerId) && resource.data.ownerId == request.auth.uid;
-      }
-
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn() && isExistingOwner(resource.data.ownerId);
-      allow delete: if isSignedIn() && isExistingOwner(resource.data.ownerId);
-    }
-
-    /**
-     * @description Allows access to message documents within a channel based on channel membership.
-     * @path /channels/{channelId}/messages/{messageId}
-     * @allow (get) User who is a member of the channel can read the message.
-     * @allow (list) User who is a member of the channel can list messages.
-     * @deny (create) User who is not a member of the channel cannot create a message.
-     * @deny (update) User who is not a member of the channel cannot update a message.
-     * @deny (delete) User who is not a member of the channel cannot delete a message.
-     * @principle Enforces shared access based on the `memberIds` array in the channel document.
-     */
-    match /channels/{channelId}/messages/{messageId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isChannelMember() {
-        return isSignedIn() && get(/databases/$(database)/documents/channels/$(channelId)).data.memberIds.hasAny([request.auth.uid]);
-      }
-
-      allow get: if isSignedIn() && isChannelMember();
-      allow list: if isSignedIn() && isChannelMember();
-      allow create: if isSignedIn() && isChannelMember();
+      allow get, list: if isSignedIn() && isChatParticipant(chatId);
+      allow create: if isSignedIn() && isChatParticipant(chatId) && request.auth.uid == request.resource.data.senderId;
       allow update: if false;
       allow delete: if false;
     }
 
     /**
-     * @description Allows access to call log documents based on ownership.
-     * @path /users/{userId}/callLogs/{callLogId}
-     * @allow (create) User with ID 'user123' can create a call log under their ID.
-     * @allow (get) User with ID 'user123' can read a call log under their ID.
-     * @allow (update) User with ID 'user123' can update a call log under their ID.
-     * @allow (delete) User with ID 'user123' can delete a call log under their ID.
-     * @deny (create) User with ID 'user456' cannot create a call log under user123.
-     * @deny (get) User with ID 'user456' cannot read a call log under user123.
-     * @principle Enforces document ownership for all operations.
+     * @description Controls access to status posts. Statuses are publicly readable, but only the owner can create, update, or delete them.
+     * @path /statuses/{statusId}
+     * @allow (get, list) - Any user can read any status.
+     *   true
+     * @allow (create) - Only the authenticated user can create a status with their userId in the status data.
+     *   request.auth.uid == request.resource.data.userId
+     * @allow (update, delete) - Only the owner can update or delete their status.
+     *   request.auth.uid == resource.data.userId
+     * @deny (create) - User with ID 'user456' cannot create a status with userId 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.userId == 'user123'
+     * @deny (update, delete) - User with ID 'user456' cannot update or delete the status of user 'user123'.
+     *   request.auth.uid == 'user456'
+     * @principle Enforces public read access with owner-only writes.
      */
-    match /users/{userId}/callLogs/{callLogId} {
-      function isSignedIn() {
-        return request.auth != null;
+    match /statuses/{statusId} {
+      function isOwner() {
+        return request.auth.uid == resource.data.userId;
       }
 
+      function isExistingOwner() {
+        return isOwner() && resource != null;
+      }
+
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+
+    /**
+     * @description Controls access to channels. Channels are publicly readable, but only the owner can create, update, or delete them.
+     * @path /channels/{channelId}
+     * @allow (get, list) - Any user can read any channel.
+     *   true
+     * @allow (create) - Only the authenticated user can create a channel with their userId in the channel data.
+     *   request.auth.uid == request.resource.data.ownerId
+     * @allow (update, delete) - Only the owner can update or delete their channel.
+     *   request.auth.uid == resource.data.ownerId
+     * @deny (create) - User with ID 'user456' cannot create a channel with ownerId 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.ownerId == 'user123'
+     * @deny (update, delete) - User with ID 'user456' cannot update or delete the channel of user 'user123'.
+     *   request.auth.uid == 'user456'
+     * @principle Enforces public read access with owner-only writes.
+     */
+    match /channels/{channelId} {
+      function isOwner() {
+        return request.auth.uid == resource.data.ownerId;
+      }
+      function isExistingOwner() {
+        return isOwner() && resource != null;
+      }
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+
+    /**
+     * @description Controls access to messages within a channel. Only members of the channel can read messages, and only the sender can create a message.
+     * @path /channels/{channelId}/messages/{messageId}
+     * @allow (get, list) - Any channel member can read messages in the channel.
+     *   request.auth.uid in get(/databases/$(database)/documents/channels/$(channelId)).data.memberIds
+     * @allow (create) - Only a channel member can create a message.
+     *   request.auth.uid in get(/databases/$(database)/documents/channels/$(channelId)).data.memberIds
+     * @deny (get, list) - A non-member cannot read messages in the channel.
+     *   !(request.auth.uid in get(/databases/$(database)/documents/channels/$(channelId)).data.memberIds)
+     * @deny (update, delete) - Messages cannot be updated or deleted.
+     *   false
+     * @principle Enforces shared read access and sender-only create access for messages.
+     */
+    match /channels/{channelId}/messages/{messageId} {
+      function isChannelMember(channelId) {
+        return request.auth.uid in get(/databases/$(database)/documents/channels/$(channelId)).data.memberIds;
+      }
+      allow get, list: if isSignedIn() && isChannelMember(channelId);
+      allow create: if isSignedIn() && isChannelMember(channelId) && request.auth.uid == request.resource.data.senderId;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+     /**
+      * @description Controls access to call logs for a specific user. Only the owning user can create, read, update, or delete their call logs.
+      * @path /users/{userId}/callLogs/{callLogId}
+      * @allow (create) - User with ID 'user123' can create a call log under their userId.
+      *   request.auth.uid == 'user123'
+      * @allow (get, update, delete) - User with ID 'user123' can read, update, or delete their call log.
+      *   request.auth.uid == 'user123'
+      * @deny (create) - User with ID 'user456' cannot create a call log under userId 'user123'.
+      *   request.auth.uid == 'user456'
+      * @deny (get, update, delete) - User with ID 'user456' cannot read, update, or delete the call log of user 'user123'.
+      *   request.auth.uid == 'user456'
+      * @principle Enforces strict user-ownership for all call log data.
+      */
+    match /users/{userId}/callLogs/{callLogId} {
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-
       function isExistingOwner(userId) {
-          return isSignedIn() && isOwner(userId) && resource.data.userId == request.auth.uid;
+        return isOwner(userId) && resource != null;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // Helper function to determine if a user is signed in.
+    function isSignedIn() {
+      return request.auth != null;
     }
   }
 }
