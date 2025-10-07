@@ -1,7 +1,7 @@
 'use client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, onSnapshot, doc, getDoc, DocumentData, orderBy, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, DocumentData, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
@@ -31,7 +31,7 @@ export function ChatList() {
     setLoading(true);
 
     const chatsCol = collection(firestore, 'chats');
-    const q = query(chatsCol, where('participants', 'array-contains', user.uid), orderBy('updatedAt', 'desc'));
+    const q = query(chatsCol, where('participants', 'array-contains', user.uid));
     
     const unsubscribe = onSnapshot(q, async (snap) => {
       const chatsData: Chat[] = [];
@@ -48,6 +48,14 @@ export function ChatList() {
         }
         chatsData.push(chat);
       }
+      
+      // Sort chats on the client-side
+      chatsData.sort((a, b) => {
+        const dateA = a.updatedAt?.toMillis() || 0;
+        const dateB = b.updatedAt?.toMillis() || 0;
+        return dateB - dateA;
+      });
+
       setChats(chatsData);
       setLoading(false);
     }, (error) => {
