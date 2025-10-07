@@ -1,13 +1,13 @@
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAnPMQH1uhlekwvNQCO2vtPjS0QhFIMbEw",
-  authDomain: "bestu-chat-3f4c2.firebaseapp.com",
-  projectId: "bestu-chat-3f4c2",
-  storageBucket: "bestu-chat-3f4c2.appspot.com",
-  messagingSenderId: "482542679767",
-  appId: "1:482542679767:web:c3b34d6b9f6ef7d69fa292",
-  measurementId: "G-G83MELP6PH"
+  "projectId": "studio-7625668114-17a40",
+  "appId": "1:629206608253:web:153a54a197cfda478e8414",
+  "apiKey": "AIzaSyBoVCNKTe8qgtB8BwTNAr0u8Ec7eO3GCKM",
+  "authDomain": "studio-7625668114-17a40.firebaseapp.com",
+  "measurementId": "",
+  "storageBucket": "studio-7625668114-17a40.appspot.com",
+  "messagingSenderId": "629206608253"
 };
 
 export function getFirebaseConfig() {
