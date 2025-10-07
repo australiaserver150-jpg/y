@@ -95,6 +95,13 @@
       "description": "Represents a conversation between users, containing messages.",
       "type": "object",
       "properties": {
+        "participants": {
+          "type": "array",
+          "description": "An array of user IDs participating in the chat.",
+          "items": {
+            "type": "string"
+          }
+        },
         "messages": {
           "type": "array",
           "items": {
