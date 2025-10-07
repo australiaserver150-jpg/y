@@ -176,8 +176,7 @@
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "google"
     ]
   },
   "firestore": {
@@ -278,3 +277,4 @@
     "reasoning": "The Firestore structure is designed to support a real-time chat application with user profiles, smart reply suggestions, and analytics. It prioritizes authorization independence by denormalizing participant information into the chat rooms. This eliminates the need for `get()` calls in security rules when accessing chat messages or smart replies within a room, enabling atomic operations and improving security rule performance.\n\n*   **User Profiles:** Stored in a `users` collection using path-based ownership (`/users/{userId}`).\n*   **Chat Rooms:** Stored in the `chatRooms` collection. The `participantIds` array within each chat room is crucial. Security rules will check if `request.auth.uid` exists in this array to authorize access to the chat room and its associated messages and smart replies.  This `participantIds` array is DENORMALIZED for authorization independence.\n*   **Chat Messages:** Stored as a subcollection under each chat room (`/chatRooms/{chatRoomId}/messages/{messageId}`). The security rules can efficiently check if the user is a participant of the chat room before allowing access to messages.\n*   **Smart Replies:** Stored as a subcollection under each chat message (`/chatRooms/{chatRoomId}/messages/{messageId}/smartReplies/{smartReplyId}`).  Access is controlled based on the parent chat message and thus the `chatRoomId`.\n*   **Analytics Events:** Stored in the `analyticsEvents` collection, separated from user-owned data to ensure only authorized services can write to this collection. The userId is included for analysis but authorization is managed at the collection level.\n\nThis structure supports the required QAPs (Rules are not Filters) by ensuring that list operations on messages and smart replies are secure. Listing messages requires being a participant in the `chatRoom`, which is checked via the denormalized `participantIds` array in the `chatRoom` document."
   }
 }
+    

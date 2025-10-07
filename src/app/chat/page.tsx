@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase } from "@/firebase/provider";
 
 function ChatPageContent() {
-  const { auth, db } = useFirebase();
+  const { auth, firestore: db } = useFirebase();
   const [user, loading] = useAuthState(auth!);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
@@ -119,3 +119,5 @@ export default function ChatPage() {
   
   return auth ? <ChatPageContent /> : <Loading />;
 }
+
+    
