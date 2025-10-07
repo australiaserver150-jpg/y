@@ -28,9 +28,10 @@ import { doc, getDoc } from "firebase/firestore";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Loading } from "@/components/Loading";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
-import { auth, db } from "@/lib/firebase";
+import { useFirebase } from "@/firebase/provider";
 
 function ChatLayout() {
+  const { auth, db } = useFirebase();
   const [conversations, setConversations] =
     React.useState<Conversation[]>(initialConversations);
   const [activeConversationId, setActiveConversationId] = React.useState<

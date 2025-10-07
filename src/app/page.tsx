@@ -16,9 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Loading } from "@/components/Loading";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, db, provider } from "@/lib/firebase";
+import { useFirebase } from "@/firebase/provider";
 
 export default function AuthPage() {
+  const { auth, db, provider } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [user, authLoading] = useAuthState(auth);
