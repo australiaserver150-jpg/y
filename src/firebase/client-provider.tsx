@@ -14,6 +14,7 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
 };
 
 // Initialize Firebase
@@ -25,7 +26,7 @@ export const googleProvider = new GoogleAuthProvider();
 
 
 export function FirebaseClientProvider({ children }: { children: ReactNode }) {
-  const configExists = Object.values(firebaseConfig).every(Boolean);
+  const configExists = Object.values(firebaseConfig).every(val => val || val === undefined); // databaseURL can be undefined
 
   if (!configExists) {
     return (
